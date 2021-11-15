@@ -20,6 +20,16 @@ class Main(tk.Frame):
                                     bd=0, compound=tk.TOP, image=self.add_img)
         btn_open_dialog.pack(side=tk.LEFT)
 
+        self.update_img = tk.PhotoImage(file='img/update.png')
+        btn_edit_dialog = tk.Button(master=toolbar, text='Редактировать', bg='#d7d8e0', bd=0, image=self.update_img,
+                                    compound=tk.TOP, command=self.open_update)
+        btn_edit_dialog.pack(side=tk.LEFT)
+
+        self.delete_img = tk.PhotoImage(file='img/delete.png')
+        btn_delete_dialog = tk.Button(master=toolbar, text='Удалить', bg='#d7d8e0', bd=0, image=self.delete_img,
+                                      compound=tk.TOP, command=self.delete_records)
+        btn_delete_dialog.pack(side=tk.LEFT)
+
         self.tree = ttk.Treeview(self, columns=('ID', 'description', 'costs', 'price', 'date'), height=15,
                                  show='headings')
 
@@ -37,17 +47,33 @@ class Main(tk.Frame):
 
         self.tree.pack()
 
-    def open_dialog(self):
-        Child()
-
     def records(self, description, costs, price):
         self.database.insert_data(description, costs, price)
         self.view_records()
+
+    def update_records(self, description, costs, price):
+        self.database.cursor.execute("""UPDATE control SET description=?, costs=?, price=?, date=? WHERE ID=?""",
+                                     (description, costs, price, str(datetime.now())[:19],
+                                      self.tree.set(self.tree.selection(), '#1')))
+        self.database.connection.commit()
+        self.view_records()
+
+    def delete_records(self):
+        for selection_item in self.tree.selection():
+            self.database.cursor.execute("""DELETE FROM control WHERE id=?""", (self.tree.set(selection_item, '#1'),))
+            self.database.connection.commit()
+            self.view_records()
 
     def view_records(self):
         self.database.cursor.execute("""SELECT * FROM control""")
         [self.tree.delete(i) for i in self.tree.get_children()]
         [self.tree.insert('', 'end', values=row) for row in self.database.cursor.fetchall()]
+
+    def open_dialog(self):
+        Child()
+
+    def open_update(self):
+        Update()
 
 
 class Child(tk.Toplevel):
@@ -55,6 +81,10 @@ class Child(tk.Toplevel):
         super().__init__(window)
         self.init_child()
         self.view = app
+
+    def add(self):
+        self.view.records(self.entry_description.get(), self.combobox.get(), self.entry_price.get())
+        self.destroy()
 
     def init_child(self):
         self.title('Добавить расходы/доходы')
@@ -78,16 +108,41 @@ class Child(tk.Toplevel):
         self.combobox.current(0)
         self.combobox.place(x=200, y=70)
 
-        btn_add = ttk.Button(self, text='Добавить')
-        btn_add.place(x=210, y=155)
-        btn_add.bind('<Button-1>', lambda event: self.view.records(self.entry_description.get(), self.combobox.get(),
-                                                                   self.entry_price.get(),
-                                                                   ))
+        self.btn_save_and_continue = ttk.Button(self, text='Сохранить и продолжить')
+        self.btn_save_and_continue.place(x=57, y=155)
+        self.btn_save_and_continue.bind('<Button-1>', lambda event: self.view.records(self.entry_description.get(),
+                                                                                      self.combobox.get(),
+                                                                                      self.entry_price.get(),
+                                                                                      ))
+        self.btn_add = ttk.Button(self, text='Добавить', command=self.add)
+        self.btn_add.place(x=210, y=155)
         btn_cancel = ttk.Button(self, text='Отмена', command=self.destroy)
         btn_cancel.place(x=290, y=155)
 
         self.grab_set()
         self.focus_get()
+
+
+class Update(Child):
+    def __init__(self):
+        super().__init__()
+        self.init_edit()
+
+    def update(self):
+        self.view.update_records(self.entry_description.get(), self.combobox.get(), self.entry_price.get())
+        self.destroy()
+
+    def init_edit(self):
+        self.title('Редактировать')
+        btn_edit = ttk.Button(self, text='Редактировать', command=self.update)
+        btn_edit.place(x=195, y=155)
+        self.btn_save_and_continue.place(x=40, y=155)
+        self.btn_save_and_continue.bind('<Button-1>',
+                                        lambda event: self.view.update_records(self.entry_description.get(),
+                                                                               self.combobox.get(),
+                                                                               self.entry_price.get(),
+                                                                               ))
+        self.btn_add.destroy()
 
 
 class DataBase:
