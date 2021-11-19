@@ -3,6 +3,7 @@ from datetime import datetime
 
 
 class DataBase:
+    """Создание/вызов базы данных"""
     def __init__(self):
         self.connection = sqlite3.connect("control.db")
         self.cursor = self.connection.cursor()
@@ -19,6 +20,7 @@ class DataBase:
         self.connection.commit()
 
     def insert_data(self, description, costs, price):
+        """Добавление записей в базу"""
         self.cursor.execute(
             """INSERT INTO control (description, costs, price, date) VALUES (?, ?, ?, ?)""",
             (description, costs, price, str(datetime.now())[:19])

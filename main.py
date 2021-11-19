@@ -1,12 +1,12 @@
 import tkinter as tk
 from datetime import datetime
 from tkinter import ttk, messagebox
-import sqlite3
 
 from database import DataBase
 
 
 class Main(tk.Frame):
+    """Главное окно"""
     def __init__(self, window):
         super().__init__(window)
         self.init_main()
@@ -14,6 +14,7 @@ class Main(tk.Frame):
         self.view_records()
 
     def init_main(self):
+        """Инициализация главного окна"""
         toolbar = tk.Frame(bg='#d7d8e0', bd=10)
         toolbar.pack(side=tk.TOP, fill=tk.X)
 
@@ -76,6 +77,7 @@ class Main(tk.Frame):
         self.tree.configure(yscrollcommand=scroll.set)
 
     def validate_data(self, costs, price):
+        """Валидатор полей"""
         information = 'P.S. Десятичные писать через точку!'
         if costs not in ('Расход', 'Доход'):
             messagebox.showwarning("Ошибка заполнения!", f"Нет такого действия - '{costs}'!")
@@ -90,26 +92,40 @@ class Main(tk.Frame):
             else:
                 return True
 
+    def control_of_filling_the_price(self, cost, price):
+        """Конроль знака в зависимости от действия"""
+        if cost == 'Расход' and price[0] != '-':
+            price = '-' + price
+        elif cost == 'Доход' and price[0] == '-':
+            price = price[1:]
+        return round(float(price), 2)
+
     def records(self, description, costs, price):
+        """Добавление записи"""
         if self.validate_data(costs, price):
+            price = self.control_of_filling_the_price(costs, price)
             self.database.insert_data(description, costs, price)
             self.view_records()
 
     def update_records(self, description, costs, price):
+        """Обновление записи"""
         if self.validate_data(costs, price):
+            price = self.control_of_filling_the_price(costs, price)
             self.database.cursor.execute("""UPDATE control SET description=?, costs=?, price=?, date=? WHERE ID=?""",
                                          (description, costs, price, str(datetime.now())[:19],
-                                          self.tree.set(self.tree.selection(), '#1')))
+                                          self.tree.set(self.tree.selection(), '#1'),))
             self.database.connection.commit()
             self.view_records()
 
     def clean_the_mark(self):
+        """Удаление всех записей"""
         if messagebox.askokcancel('Подтверждение действия', 'Вы действительно хотите удалить все записи?'):
             self.database.cursor.execute('''DELETE FROM control''')
             self.database.connection.commit()
             self.view_records()
 
     def delete_records(self):
+        """Удаление выбранных записей"""
         if self.tree.selection():
             for selection_item in self.tree.selection():
                 self.database.cursor.execute('''DELETE FROM control WHERE id=?''',
@@ -120,39 +136,48 @@ class Main(tk.Frame):
         self.view_records()
 
     def view_records(self):
+        """Вывод всех записей на главном окне"""
         self.database.cursor.execute("""SELECT * FROM control""")
         [self.tree.delete(i) for i in self.tree.get_children()]
         [self.tree.insert('', 'end', values=row) for row in self.database.cursor.fetchall()]
 
     def search_records(self, description):
+        """Поиск записей"""
         description = ('%' + description + '%',)
         self.database.cursor.execute('''SELECT * FROM control WHERE description LIKE ?''', description)
         [self.tree.delete(i) for i in self.tree.get_children()]
         [self.tree.insert('', 'end', values=row) for row in self.database.cursor.fetchall()]
 
     def open_dialog(self):
+        """Вызов окна добавления записей"""
         Child()
 
     def open_the_update(self):
+        """Вызов окна изменения записей"""
         Update()
 
     def open_the_search(self):
+        """Вызов окна поиска записей"""
         Search()
 
     def open_the_calculate(self):
+        """Вызов окна расчета"""
         Calculate()
 
 
 class Child(tk.Toplevel):
+    """Окно добавления записей"""
     def __init__(self):
         super().__init__(window)
         self.view = app
         self.init_the_child()
 
     def add_the_mark(self):
+        """Логика кнопок добавления"""
         self.view.records(self.entry_description.get(), self.combobox.get(), self.entry_price.get())
 
     def init_the_child(self):
+        """Инициализация окна добавления"""
         self.title('Добавить расходы/доходы')
         self.geometry('400x200+400+300')
         self.resizable(False, False)
@@ -190,6 +215,7 @@ class Child(tk.Toplevel):
 
 
 class Update(Child):
+    """Окно редактирования записей"""
     def __init__(self):
         super().__init__()
         self.init_the_edit()
@@ -197,10 +223,12 @@ class Update(Child):
         self.default_data()
 
     def update_the_mark(self):
+        """Логика кнопки редактирования"""
         self.view.update_records(self.entry_description.get(), self.combobox.get(), self.entry_price.get())
         self.destroy()
 
     def init_the_edit(self):
+        """Инициализация окна редактирования"""
         self.title('Редактировать')
         btn_edit = ttk.Button(self, text='Редактировать', command=self.update_the_mark)
         btn_edit.place(x=195, y=155)
@@ -209,6 +237,7 @@ class Update(Child):
         self.btn_add.destroy()
 
     def default_data(self):
+        """Заполнение полей по умолчанию"""
         if len(self.view.tree.selection()) > 1:
             self.destroy()
             messagebox.showwarning("Ошибка", "За раз можно обновить 1 запись!")
@@ -227,12 +256,14 @@ class Update(Child):
 
 
 class Search(tk.Toplevel):
+    """Окно поиска записей"""
     def __init__(self):
         super().__init__()
         self.init_the_search()
         self.view = app
 
     def init_the_search(self):
+        """Инициализация окна поиска"""
         self.title('Поиск')
         self.geometry('300x100+400+300')
         self.resizable(False, False)
@@ -256,34 +287,56 @@ class Search(tk.Toplevel):
 
 
 class Calculate(tk.Toplevel):
+    """Окно расчета"""
     def __init__(self):
         super().__init__()
+        self.database = database
         self.init_the_calculate()
 
     def init_the_calculate(self):
-        text = 'qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq'
-        self.title('Рассчет прибыли')
-        self.geometry('300x170+400+300')
+        """Инициализация окна расчета"""
+        self.title('Расчет прибыли')
+        self.geometry('300x180+400+300')
         self.resizable(False, False)
 
-        frame = tk.Frame(self, bg='#d7d8e0')
-        frame.pack(side=tk.TOP, fill=tk.X)
+        response = self.calculate()
+        text = self.description(response)
 
-        lbl_search = tk.Label(master=frame, text='Осталось:', font=('Times', '14'))
-        lbl_search.place(x=75, y=20)
-        # lbl_search = tk.Label(self, text='1000', font=('Times', '15'))
-        # lbl_search.place(x=160, y=20)
-        #
-        # btb_graph = tk.Button(self, text='График действий', font=('Times', '13'))
-        # btb_graph.place(x=85, y=50)
-        #
-        # lbl_search = tk.Label(self, text=text, font=('Times', '13'), wraplength=270)
-        # lbl_search.place(x=15, y=90)
+        lbl_search = tk.Label(self, text=f'Осталось: {response} BYN', font=('Times', '14'), pady=15)
+        lbl_search.pack()
 
+        btb_graph = tk.Button(self, text='График действий', font=('Times', '13'), command='')
+        btb_graph.pack()
 
+        lbl_search = tk.Label(self, text=text, font=('Times', '13'), wraplength=270, pady=15)
+        lbl_search.pack()
 
         self.grab_set()
         self.focus_get()
+
+    def calculate(self):
+        """Расчет финансов"""
+        self.database.cursor.execute("""SELECT price FROM control""")
+        response = sum([price[0] for price in self.database.cursor.fetchall()])
+        return round(response, 2)
+
+    def description(self, response):
+        """Дополнительная информация при расчете"""
+        self.database.cursor.execute("""SELECT * FROM control""")
+        mark = bool(self.database.cursor.fetchall())
+        if not mark:
+            text = 'Нет Записей'
+        elif response < 0:
+            text = 'Ваш доход ушел за границу нуля, вам срочно нужен дополнительный заработок!'
+        elif not mark:
+            text = 'Нет Записей'
+        elif response == 0:
+            text = 'От зарплаты до зарплаты ?'
+        elif 0 < response < 300:
+            text = 'Пока что все под контролем, так держать!'
+        else:
+            text = f'Все под контролем, можно сходить на шопинг. Примерно допустимая сумма затрат {response - 300} BYN!'
+        return text
 
 
 if __name__ == '__main__':
