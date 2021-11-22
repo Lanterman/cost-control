@@ -2,11 +2,12 @@ import tkinter as tk
 from datetime import datetime
 from tkinter import ttk, messagebox
 
-from database import DataBase
+from database import DataBase, ValidateData
 
 
 class Main(tk.Frame):
     """Главное окно"""
+
     def __init__(self, window):
         super().__init__(window)
         self.init_main()
@@ -20,7 +21,7 @@ class Main(tk.Frame):
 
         # primary actions
         self.add_img = tk.PhotoImage(file='img/add.gif')
-        btn_open_dialog = tk.Button(master=toolbar, text='Add', command=self.open_dialog, bg='#d7d8e0',
+        btn_open_dialog = tk.Button(master=toolbar, text='Add', command=self.open_the_dialog, bg='#d7d8e0',
                                     bd=1, compound=tk.TOP, image=self.add_img, width=55, height=55)
         btn_open_dialog.pack(side=tk.LEFT)
 
@@ -51,16 +52,16 @@ class Main(tk.Frame):
         btn_edit_dialog.pack(side=tk.RIGHT)
 
         self.calculate_img = tk.PhotoImage(file='img/dollar.gif')
-        btn_delete = tk.Button(master=toolbar, text='Calculate', bg='#d7d8e0', bd=1, image=self.calculate_img,
-                               compound=tk.TOP, command=self.open_the_calculate, width=55, height=55)
-        btn_delete.pack(side=tk.RIGHT)
+        btn_calculate = tk.Button(master=toolbar, text='Calculate', bg='#d7d8e0', bd=1, image=self.calculate_img,
+                                  compound=tk.TOP, command=self.open_the_calculate, width=55, height=55)
+        btn_calculate.pack(side=tk.RIGHT)
 
         self.tree = ttk.Treeview(self, columns=('ID', 'description', 'costs', 'price', 'date'), height=15,
                                  show='headings')
 
-        self.tree.column('ID', width=30, anchor=tk.CENTER)
-        self.tree.column('description', width=240, anchor=tk.CENTER)
-        self.tree.column('costs', width=120, anchor=tk.CENTER)
+        self.tree.column('ID', width=25, anchor=tk.CENTER)
+        self.tree.column('description', width=250, anchor=tk.CENTER)
+        self.tree.column('costs', width=110, anchor=tk.CENTER)
         self.tree.column('price', width=100, anchor=tk.CENTER)
         self.tree.column('date', width=150, anchor=tk.CENTER)
 
@@ -75,47 +76,6 @@ class Main(tk.Frame):
         scroll = tk.Scrollbar(self, command=self.tree.yview)
         scroll.pack(side=tk.LEFT, fill=tk.Y)
         self.tree.configure(yscrollcommand=scroll.set)
-
-    def validate_data(self, costs, price):
-        """Валидатор полей"""
-        information = 'P.S. Десятичные писать через точку!'
-        if costs not in ('Расход', 'Доход'):
-            messagebox.showwarning("Ошибка заполнения!", f"Нет такого действия - '{costs}'!")
-        elif not price:
-            messagebox.showwarning("Ошибка заполнения!", "Сумма не может быть пустой!")
-        elif price:
-            try:
-                float(price)
-            except Exception:
-                messagebox.showwarning("Ошибка заполнения!",
-                                       f"Допустимы только числа(простые и десятичные) - '{price}'!\n{information}")
-            else:
-                return True
-
-    def control_of_filling_the_price(self, cost, price):
-        """Конроль знака в зависимости от действия"""
-        if cost == 'Расход' and price[0] != '-':
-            price = '-' + price
-        elif cost == 'Доход' and price[0] == '-':
-            price = price[1:]
-        return round(float(price), 2)
-
-    def records(self, description, costs, price):
-        """Добавление записи"""
-        if self.validate_data(costs, price):
-            price = self.control_of_filling_the_price(costs, price)
-            self.database.insert_data(description, costs, price)
-            self.view_records()
-
-    def update_records(self, description, costs, price):
-        """Обновление записи"""
-        if self.validate_data(costs, price):
-            price = self.control_of_filling_the_price(costs, price)
-            self.database.cursor.execute("""UPDATE control SET description=?, costs=?, price=?, date=? WHERE ID=?""",
-                                         (description, costs, price, str(datetime.now())[:19],
-                                          self.tree.set(self.tree.selection(), '#1'),))
-            self.database.connection.commit()
-            self.view_records()
 
     def clean_the_mark(self):
         """Удаление всех записей"""
@@ -141,14 +101,7 @@ class Main(tk.Frame):
         [self.tree.delete(i) for i in self.tree.get_children()]
         [self.tree.insert('', 'end', values=row) for row in self.database.cursor.fetchall()]
 
-    def search_records(self, description):
-        """Поиск записей"""
-        description = ('%' + description + '%',)
-        self.database.cursor.execute('''SELECT * FROM control WHERE description LIKE ?''', description)
-        [self.tree.delete(i) for i in self.tree.get_children()]
-        [self.tree.insert('', 'end', values=row) for row in self.database.cursor.fetchall()]
-
-    def open_dialog(self):
+    def open_the_dialog(self):
         """Вызов окна добавления записей"""
         Child()
 
@@ -167,14 +120,12 @@ class Main(tk.Frame):
 
 class Child(tk.Toplevel):
     """Окно добавления записей"""
+
     def __init__(self):
         super().__init__(window)
         self.view = app
+        self.validate = validate
         self.init_the_child()
-
-    def add_the_mark(self):
-        """Логика кнопок добавления"""
-        self.view.records(self.entry_description.get(), self.combobox.get(), self.entry_price.get())
 
     def init_the_child(self):
         """Инициализация окна добавления"""
@@ -213,28 +164,49 @@ class Child(tk.Toplevel):
         self.grab_set()
         self.focus_get()
 
+    def add_the_mark(self):
+        """Логика кнопок добавления"""
+        self.records(self.entry_description.get(), self.combobox.get(), self.entry_price.get())
+
+    def records(self, description, costs, price):
+        """Добавление записи"""
+        if self.validate.validate_data(costs, price):
+            price = self.validate.control_of_filling_the_price(costs, price)
+            self.view.database.insert_data(description, costs, price)
+            self.view.view_records()
+
 
 class Update(Child):
     """Окно редактирования записей"""
+
     def __init__(self):
         super().__init__()
         self.init_the_edit()
         self.database = database
         self.default_data()
 
-    def update_the_mark(self):
-        """Логика кнопки редактирования"""
-        self.view.update_records(self.entry_description.get(), self.combobox.get(), self.entry_price.get())
-        self.destroy()
-
     def init_the_edit(self):
         """Инициализация окна редактирования"""
         self.title('Редактировать')
-        btn_edit = ttk.Button(self, text='Редактировать', command=self.update_the_mark)
+        btn_edit = ttk.Button(self, text='Редактировать')
         btn_edit.place(x=195, y=155)
+        btn_edit.bind('<Button-1>', lambda event: self.update_records(self.entry_description.get(),
+                                                                      self.combobox.get(),
+                                                                      self.entry_price.get()))
+        btn_edit.bind('<Button-1>', lambda event: self.destroy(), add='+')
 
         self.btn_save_and_continue.destroy()
         self.btn_add.destroy()
+
+    def update_records(self, description, costs, price):
+        """Обновление записи"""
+        if self.validate.validate_data(costs, price):
+            price = self.validate.control_of_filling_the_price(costs, price)
+            self.database.cursor.execute("""UPDATE control SET description=?, costs=?, price=?, date=? WHERE ID=?""",
+                                         (description, costs, price, str(datetime.now())[:19],
+                                          self.view.tree.set(self.view.tree.selection(), '#1'),))
+            self.database.connection.commit()
+            self.view.view_records()
 
     def default_data(self):
         """Заполнение полей по умолчанию"""
@@ -257,6 +229,7 @@ class Update(Child):
 
 class Search(tk.Toplevel):
     """Окно поиска записей"""
+
     def __init__(self):
         super().__init__()
         self.init_the_search()
@@ -271,23 +244,31 @@ class Search(tk.Toplevel):
         lbl_search = tk.Label(self, text='Поиск')
         lbl_search.place(x=50, y=20)
 
-        self.entry_search = ttk.Entry(self)
-        self.entry_search.place(x=105, y=20, width=150)
+        entry_search = ttk.Entry(self)
+        entry_search.place(x=105, y=20, width=150)
 
         btn_cancel = ttk.Button(self, text='Закрыть', command=self.destroy)
         btn_cancel.place(x=185, y=50)
 
         btn_search = ttk.Button(self, text='Поиск')
         btn_search.place(x=105, y=50)
-        btn_search.bind('<Button-1>', lambda event: self.view.search_records(self.entry_search.get()))
+        btn_search.bind('<Button-1>', lambda event: self.search_records(entry_search.get()))
         btn_search.bind('<Button-1>', lambda event: self.destroy(), add='+')
 
         self.grab_set()
         self.focus_get()
 
+    def search_records(self, description):
+        """Поиск записей"""
+        description = ('%' + description + '%',)
+        self.view.database.cursor.execute('''SELECT * FROM control WHERE description LIKE ?''', description)
+        [self.view.tree.delete(i) for i in self.view.tree.get_children()]
+        [self.view.tree.insert('', 'end', values=row) for row in self.view.database.cursor.fetchall()]
+
 
 class Calculate(tk.Toplevel):
     """Окно расчета"""
+
     def __init__(self):
         super().__init__()
         self.database = database
@@ -342,6 +323,7 @@ class Calculate(tk.Toplevel):
 if __name__ == '__main__':
     window = tk.Tk()
     database = DataBase()
+    validate = ValidateData()
     app = Main(window)
     app.pack()
     window.title('Cost control')
