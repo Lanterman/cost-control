@@ -13,6 +13,7 @@ class DataBase:
             CREATE TABLE IF NOT EXISTS control (
             id integer primary key,
             description text,
+            category text,
             costs text,
             price real,
             date text)
@@ -20,11 +21,13 @@ class DataBase:
         )
         self.connection.commit()
 
-    def insert_data(self, description, costs, price):
+    def insert_data(self, description, category, costs, price):
         """Добавление записей в базу"""
+        if costs == 'Доход':
+            category = '---------'
         self.cursor.execute(
-            """INSERT INTO control (description, costs, price, date) VALUES (?, ?, ?, ?)""",
-            (description, costs, price, str(datetime.now())[:19])
+            """INSERT INTO control (description, category, costs, price, date) VALUES (?, ?, ?, ?, ?)""",
+            (description, category, costs, price, str(datetime.now())[:19])
         )
         self.connection.commit()
 
@@ -32,10 +35,14 @@ class DataBase:
 class ValidateData:
     """Валидатор полей"""
 
-    def validate_data(self, costs, price):
+    def validate_data(self, category, costs, price):
         """Валидатор полей"""
         information = 'P.S. Десятичные писать через точку!'
-        if costs not in ('Расход', 'Доход'):
+        if category not in ('---------', 'покупки', 'транспорт'):
+            messagebox.showwarning("Ошибка заполнения!", f"Нет такой категории - '{category}'!")
+        elif costs == '---------':
+            messagebox.showwarning("Ошибка заполнения!", "Выберите действие!")
+        elif costs not in ('Расход', 'Доход'):
             messagebox.showwarning("Ошибка заполнения!", f"Нет такого действия - '{costs}'!")
         elif not price:
             messagebox.showwarning("Ошибка заполнения!", "Сумма не может быть пустой!")

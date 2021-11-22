@@ -1,4 +1,6 @@
 import tkinter as tk
+import matplotlib as mpl
+import matplotlib.pyplot as plt
 from datetime import datetime
 from tkinter import ttk, messagebox
 
@@ -56,17 +58,19 @@ class Main(tk.Frame):
                                   compound=tk.TOP, command=self.open_the_calculate, width=55, height=55)
         btn_calculate.pack(side=tk.RIGHT)
 
-        self.tree = ttk.Treeview(self, columns=('ID', 'description', 'costs', 'price', 'date'), height=15,
+        self.tree = ttk.Treeview(self, columns=('ID', 'description', 'category', 'costs', 'price', 'date'), height=15,
                                  show='headings')
 
         self.tree.column('ID', width=25, anchor=tk.CENTER)
         self.tree.column('description', width=250, anchor=tk.CENTER)
+        self.tree.column('category', width=135, anchor=tk.CENTER)
         self.tree.column('costs', width=110, anchor=tk.CENTER)
         self.tree.column('price', width=100, anchor=tk.CENTER)
         self.tree.column('date', width=150, anchor=tk.CENTER)
 
         self.tree.heading('ID', text='ID')
         self.tree.heading('description', text='Описание')
+        self.tree.heading('category', text='Категория')
         self.tree.heading('costs', text='Действие')
         self.tree.heading('price', text='Сумма')
         self.tree.heading('date', text='дата')
@@ -130,49 +134,56 @@ class Child(tk.Toplevel):
     def init_the_child(self):
         """Инициализация окна добавления"""
         self.title('Добавить расходы/доходы')
-        self.geometry('400x200+400+300')
+        self.geometry('400x230+400+300')
         self.resizable(False, False)
 
         lbl_description = tk.Label(self, text='Описание')
         lbl_description.place(x=50, y=40)
+        lbl_description = tk.Label(self, text='Категория')
+        lbl_description.place(x=50, y=70)
         lbl_costs = tk.Label(self, text='Действие')
-        lbl_costs.place(x=50, y=70)
+        lbl_costs.place(x=50, y=100)
         lbl_price = tk.Label(self, text='Сумма')
-        lbl_price.place(x=50, y=100)
+        lbl_price.place(x=50, y=130)
 
         self.entry_description = ttk.Entry(self)
         self.entry_description.place(x=200, y=40)
 
-        self.combobox = ttk.Combobox(self, values=['Доход', 'Расход'])
-        self.combobox.current(0)
-        self.combobox.place(x=200, y=70)
+        self.category = ttk.Combobox(self, values=['---------', 'покупки', 'транспорт'])
+        self.category.current(0)
+        self.category.place(x=200, y=70)
+
+        self.actions = ttk.Combobox(self, values=['---------', 'Доход', 'Расход'])
+        self.actions.current(0)
+        self.actions.place(x=200, y=100)
 
         self.entry_price = ttk.Entry(self)
-        self.entry_price.place(x=200, y=100)
+        self.entry_price.insert(0, 0)
+        self.entry_price.place(x=200, y=130)
 
         self.btn_save_and_continue = ttk.Button(self, text='Сохранить и продолжить', command=self.add_the_mark)
-        self.btn_save_and_continue.place(x=57, y=155)
+        self.btn_save_and_continue.place(x=57, y=185)
 
         self.btn_add = ttk.Button(self, text='Добавить')
-        self.btn_add.place(x=210, y=155)
+        self.btn_add.place(x=210, y=185)
         self.btn_add.bind('<Button-1>', lambda event: self.add_the_mark())
         self.btn_add.bind('<Button-1>', lambda event: self.destroy(), add='+')
 
         btn_cancel = ttk.Button(self, text='Отмена', command=self.destroy)
-        btn_cancel.place(x=290, y=155)
+        btn_cancel.place(x=290, y=185)
 
         self.grab_set()
         self.focus_get()
 
     def add_the_mark(self):
         """Логика кнопок добавления"""
-        self.records(self.entry_description.get(), self.combobox.get(), self.entry_price.get())
+        self.records(self.entry_description.get(), self.category.get(), self.actions.get(), self.entry_price.get())
 
-    def records(self, description, costs, price):
+    def records(self, description, category, costs, price):
         """Добавление записи"""
-        if self.validate.validate_data(costs, price):
+        if self.validate.validate_data(category, costs, price):
             price = self.validate.control_of_filling_the_price(costs, price)
-            self.view.database.insert_data(description, costs, price)
+            self.view.database.insert_data(description, category, costs, price)
             self.view.view_records()
 
 
@@ -189,22 +200,27 @@ class Update(Child):
         """Инициализация окна редактирования"""
         self.title('Редактировать')
         btn_edit = ttk.Button(self, text='Редактировать')
-        btn_edit.place(x=195, y=155)
+        btn_edit.place(x=195, y=185)
         btn_edit.bind('<Button-1>', lambda event: self.update_records(self.entry_description.get(),
-                                                                      self.combobox.get(),
+                                                                      self.category.get(),
+                                                                      self.actions.get(),
                                                                       self.entry_price.get()))
         btn_edit.bind('<Button-1>', lambda event: self.destroy(), add='+')
 
         self.btn_save_and_continue.destroy()
         self.btn_add.destroy()
 
-    def update_records(self, description, costs, price):
+    def update_records(self, description, category, costs, price):
         """Обновление записи"""
-        if self.validate.validate_data(costs, price):
+        if self.validate.validate_data(category, costs, price):
             price = self.validate.control_of_filling_the_price(costs, price)
-            self.database.cursor.execute("""UPDATE control SET description=?, costs=?, price=?, date=? WHERE ID=?""",
-                                         (description, costs, price, str(datetime.now())[:19],
-                                          self.view.tree.set(self.view.tree.selection(), '#1'),))
+            if costs == 'Доход':
+                category = '---------'
+
+            self.database.cursor.execute(
+                """UPDATE control SET description=?, category=?, costs=?, price=?, date=? WHERE ID=?""",
+                (description, category, costs, price, str(datetime.now())[:19],
+                 self.view.tree.set(self.view.tree.selection(), '#1'),))
             self.database.connection.commit()
             self.view.view_records()
 
@@ -218,10 +234,16 @@ class Update(Child):
                 self.database.cursor.execute('''SELECT * FROM control WHERE id=?''',
                                              (self.view.tree.set(self.view.tree.selection()[0], '#1'),))
                 row = self.database.cursor.fetchone()
+
+                self.category.delete(0, tk.END)
+                self.actions.delete(0, tk.END)
+                self.entry_price.delete(0, tk.END)
+
                 self.entry_description.insert(0, row[1])
-                if row[2] != 'Доход':
-                    self.combobox.current(1)
-                self.entry_price.insert(0, row[3])
+                self.category.insert(0, row[2])
+                self.actions.insert(0, row[3])
+                self.entry_price.insert(0, row[4])
+
             except IndexError:
                 self.destroy()
                 messagebox.showwarning("Ошибка", "Выберите запись для изменения!")
@@ -277,29 +299,38 @@ class Calculate(tk.Toplevel):
     def init_the_calculate(self):
         """Инициализация окна расчета"""
         self.title('Расчет прибыли')
-        self.geometry('300x180+400+300')
+        self.geometry('300x270+400+300')
         self.resizable(False, False)
 
         response = self.calculate()
-        text = self.description(response)
+        text = self.description(response[0])
 
-        lbl_search = tk.Label(self, text=f'Осталось: {response} BYN', font=('Times', '14'), pady=15)
-        lbl_search.pack()
+        lbl_search = tk.Label(self, text=f'Осталось: {response[0]} BYN', font=('Times', '16'), bg='#BAEFEB')
+        lbl_search.place(x=50, y=20)
 
-        btb_graph = tk.Button(self, text='График действий', font=('Times', '13'), command='')
-        btb_graph.pack()
+        lbl_search = tk.Label(self, text=f'Заработано: {response[1]} BYN', font=('Times', '13'))
+        lbl_search.place(x=65, y=60)
 
-        lbl_search = tk.Label(self, text=text, font=('Times', '13'), wraplength=270, pady=15)
-        lbl_search.pack()
+        lbl_search = tk.Label(self, text=f'Потрачено: {response[2]} BYN', font=('Times', '13'))
+        lbl_search.place(x=65, y=90)
+
+        btb_graph = tk.Button(self, text='Гистограмма', font=('Times', '14'), command=self.matplotlib)
+        btb_graph.place(x=90, y=130)
+
+        lbl_search = tk.Label(self, text=text, font=('Times', '13'), wraplength=270)
+        lbl_search.place(x=20, y=180)
 
         self.grab_set()
         self.focus_get()
 
     def calculate(self):
         """Расчет финансов"""
-        self.database.cursor.execute("""SELECT price FROM control""")
-        response = sum([price[0] for price in self.database.cursor.fetchall()])
-        return round(response, 2)
+        self.database.cursor.execute("""SELECT costs, price FROM control""")
+        response = self.database.cursor.fetchall()
+        profit = round(sum([price for costs, price in response]), 2)
+        income = round(sum([price for costs, price in response if costs == 'Доход']), 2)
+        expenditure = round(sum([price for costs, price in response if costs == 'Расход']), 2)
+        return [profit, income, expenditure]
 
     def description(self, response):
         """Дополнительная информация при расчете"""
@@ -319,6 +350,13 @@ class Calculate(tk.Toplevel):
             text = f'Все под контролем, можно сходить на шопинг. Примерно допустимая сумма затрат {response - 300} BYN!'
         return text
 
+    def matplotlib(self):
+        x = [1, 2, 3, 4]
+        y = [5, 2, 0.5, 1]
+
+        plt.plot(x, y)
+        plt.show()
+
 
 if __name__ == '__main__':
     window = tk.Tk()
@@ -327,7 +365,7 @@ if __name__ == '__main__':
     app = Main(window)
     app.pack()
     window.title('Cost control')
-    window.geometry('665x430+300+200')
+    window.geometry('800x430+300+200')
     window.resizable(False, False)
     tk.Label(text='Version 1.1').pack()
     app.mainloop()
