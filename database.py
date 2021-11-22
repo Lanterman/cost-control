@@ -38,7 +38,7 @@ class ValidateData:
     def validate_data(self, category, costs, price):
         """Валидатор полей"""
         information = 'P.S. Десятичные писать через точку!'
-        if category not in ('---------', 'покупки', 'транспорт'):
+        if category not in ('---------', 'продукты', 'транспорт', 'связь', 'работа', 'хобби', 'дом', 'копилка'):
             messagebox.showwarning("Ошибка заполнения!", f"Нет такой категории - '{category}'!")
         elif costs == '---------':
             messagebox.showwarning("Ошибка заполнения!", "Выберите действие!")

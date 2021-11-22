@@ -1,8 +1,9 @@
 import tkinter as tk
-import matplotlib as mpl
-import matplotlib.pyplot as plt
 from datetime import datetime
 from tkinter import ttk, messagebox
+
+import matplotlib.pyplot as plt
+import numpy as np
 
 from database import DataBase, ValidateData
 
@@ -149,7 +150,8 @@ class Child(tk.Toplevel):
         self.entry_description = ttk.Entry(self)
         self.entry_description.place(x=200, y=40)
 
-        self.category = ttk.Combobox(self, values=['---------', 'покупки', 'транспорт'])
+        self.category = ttk.Combobox(self, values=['---------', 'продукты', 'транспорт', 'связь', 'работа', 'хобби',
+                                                   'дом', 'копилка'])
         self.category.current(0)
         self.category.place(x=200, y=70)
 
@@ -351,10 +353,27 @@ class Calculate(tk.Toplevel):
         return text
 
     def matplotlib(self):
-        x = [1, 2, 3, 4]
-        y = [5, 2, 0.5, 1]
+        # data
+        self.database.cursor.execute('''SELECT category, price FROM control WHERE costs="Расход"''')
+        data = self.database.cursor.fetchall()
+        cat = {'продукты': 0, 'транспорт': 0, 'связь': 0, 'работа': 0, 'хобби': 0, 'дом': 0, 'копилка': 0, 'другое': 0}
+        for category, price in data:
+            if category in cat:
+                cat[category] += price
+            else:
+                cat['другое'] += price
 
-        plt.plot(x, y)
+        x = list(cat.keys())
+        y = [-1 * cat[i] for i in cat]
+
+        # build
+        plt.title('Контроль расходов', fontsize=14)
+        plt.xlabel('Категории', fontsize=12)
+        plt.ylabel('Сумма, BYN', fontsize=12)
+        plt.bar(x, y, label='Расходы', linewidth=0.7, color='green')
+        plt.xticks(rotation=20)
+        plt.legend()
+        plt.grid()
         plt.show()
 
 
