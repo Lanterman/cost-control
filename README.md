@@ -4,5 +4,5 @@ The project was created for informational purposes only.
 
 Description
 
-This application performs the main functions of controlling your expenses, that is, creating, editing, searching, deleting records.
-It also calculates the balance, expense, income and displays a histogram of expenses.
+This GUI application performs the basic functions of managing your expenses, i.e. creating, editing, searching, deleting the records.
+It also calculates the balance, the expenses, the income and displays the bar chart of expenses.
