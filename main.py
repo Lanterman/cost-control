@@ -3,7 +3,6 @@ from datetime import datetime
 from tkinter import ttk, messagebox
 
 import matplotlib.pyplot as plt
-import numpy as np
 
 from database import DataBase, ValidateData
 
@@ -353,6 +352,7 @@ class Calculate(tk.Toplevel):
         return text
 
     def matplotlib(self):
+        """Расчет и построение гистограммы"""
         # data
         self.database.cursor.execute('''SELECT category, price FROM control WHERE costs="Расход"''')
         data = self.database.cursor.fetchall()

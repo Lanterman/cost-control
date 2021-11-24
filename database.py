@@ -40,6 +40,8 @@ class ValidateData:
         information = 'P.S. Десятичные писать через точку!'
         if category not in ('---------', 'продукты', 'транспорт', 'связь', 'работа', 'хобби', 'дом', 'копилка'):
             messagebox.showwarning("Ошибка заполнения!", f"Нет такой категории - '{category}'!")
+        elif not costs:
+            messagebox.showwarning("Ошибка заполнения!", "Обязаное поле для заполенения!")
         elif costs == '---------':
             messagebox.showwarning("Ошибка заполнения!", "Выберите действие!")
         elif costs not in ('Расход', 'Доход'):
