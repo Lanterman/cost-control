@@ -1,6 +1,6 @@
 import unittest
 
-from database import DataBase, ValidateData
+from project.database import DataBase, ValidateData
 
 
 class TestDataBase(unittest.TestCase):

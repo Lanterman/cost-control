@@ -1,34 +1,40 @@
-import sqlite3
 from datetime import datetime
 from tkinter import messagebox
+from sqlalchemy import Column, String, Integer, create_engine
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker
+
+Base = declarative_base()
+
+
+class CostControl(Base):
+    __tablename__ = 'CostControl'
+
+    id = Column(Integer, primary_key=True)
+    description = Column(String(50), nullable=False)
+    category = Column(String(50))
+    costs = Column(String(50))
+    price = Column(Integer, default=0)
+    date = Column(String, default=str(datetime.now())[:19])
+
+    def __repr__(self):
+        return f'{self.id} - {self.description}: {self.costs} - {self.price}'
 
 
 class DataBase:
     """Создание/вызов базы данных"""
     def __init__(self):
-        self.connection = sqlite3.connect("control.db")
-        self.cursor = self.connection.cursor()
-        self.cursor.execute(
-            """
-            CREATE TABLE IF NOT EXISTS control (
-            id integer primary key,
-            description text,
-            category text,
-            costs text,
-            price real,
-            date text)
-            """
-        )
-        self.connection.commit()
+        engine = create_engine('postgresql+psycopg2://postgres:karmavdele@localhost/cost_control')
+        Base.metadata.create_all(engine)
+        session = sessionmaker(engine)
+        self.connection = session()
 
     def insert_data(self, description, category, costs, price):
         """Добавление записей в базу"""
         if costs == 'Доход':
             category = '---------'
-        self.cursor.execute(
-            """INSERT INTO control (description, category, costs, price, date) VALUES (?, ?, ?, ?, ?)""",
-            (description, category, costs, price, str(datetime.now())[:19])
-        )
+        cost = CostControl(description=description, category=category, costs=costs, price=price)
+        self.connection.add(cost)
         self.connection.commit()
 
 

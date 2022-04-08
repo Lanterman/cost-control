@@ -1,10 +1,8 @@
 import tkinter as tk
-from datetime import datetime
 from tkinter import ttk, messagebox
-
 import matplotlib.pyplot as plt
 
-from database import DataBase, ValidateData
+from project.database import DataBase, ValidateData, CostControl
 
 
 class Main(tk.Frame):
@@ -84,7 +82,8 @@ class Main(tk.Frame):
     def clean_the_mark(self):
         """Удаление всех записей"""
         if messagebox.askokcancel('Подтверждение действия', 'Вы действительно хотите удалить все записи?'):
-            self.database.cursor.execute('''DELETE FROM control''')
+            data = self.database.connection.query(CostControl)
+            [self.database.connection.delete(cost) for cost in data]
             self.database.connection.commit()
             self.view_records()
 
@@ -92,8 +91,8 @@ class Main(tk.Frame):
         """Удаление выбранных записей"""
         if self.tree.selection():
             for selection_item in self.tree.selection():
-                self.database.cursor.execute('''DELETE FROM control WHERE id=?''',
-                                             (self.tree.set(selection_item, '#1'),))
+                data = self.database.connection.query(CostControl).filter_by(id=(self.tree.set(selection_item, '#1')))
+                self.database.connection.delete(data[0])
         else:
             messagebox.showwarning("Ошибка", "Выберите запись(-и) для удаления!")
         self.database.connection.commit()
@@ -101,9 +100,11 @@ class Main(tk.Frame):
 
     def view_records(self):
         """Вывод всех записей на главном окне"""
-        self.database.cursor.execute("""SELECT * FROM control""")
+        data = self.database.connection.query(CostControl)
         [self.tree.delete(i) for i in self.tree.get_children()]
-        [self.tree.insert('', 'end', values=row) for row in self.database.cursor.fetchall()]
+        for row in data:
+            item = [row.id, row.description, row.category, row.costs, row.price, row.date]
+            self.tree.insert('', 'end', values=item)
 
     def open_the_dialog(self):
         """Вызов окна добавления записей"""
@@ -217,11 +218,7 @@ class Update(Child):
             price = self.validate.control_of_filling_the_price(costs, price)
             if costs == 'Доход':
                 category = '---------'
-
-            self.database.cursor.execute(
-                """UPDATE control SET description=?, category=?, costs=?, price=?, date=? WHERE ID=?""",
-                (description, category, costs, price, str(datetime.now())[:19],
-                 self.view.tree.set(self.view.tree.selection(), '#1'),))
+            self.data.update(values={'description': description, 'category': category, 'costs': costs, 'price': price})
             self.database.connection.commit()
             self.view.view_records()
 
@@ -230,24 +227,22 @@ class Update(Child):
         if len(self.view.tree.selection()) > 1:
             self.destroy()
             messagebox.showwarning("Ошибка", "За раз можно обновить 1 запись!")
+        elif self.view.tree.selection():
+            self.data = self.database.connection.query(CostControl).filter_by(
+                id=(self.view.tree.set(self.view.tree.selection(), '#1')))
+
+            self.category.delete(0, tk.END)
+            self.actions.delete(0, tk.END)
+            self.entry_price.delete(0, tk.END)
+
+            self.entry_description.insert(0, self.data[0].description)
+            self.category.insert(0, self.data[0].category)
+            self.actions.insert(0, self.data[0].costs)
+            self.entry_price.insert(0, self.data[0].price)
+            self.database.connection.commit()
         else:
-            try:
-                self.database.cursor.execute('''SELECT * FROM control WHERE id=?''',
-                                             (self.view.tree.set(self.view.tree.selection()[0], '#1'),))
-                row = self.database.cursor.fetchone()
-
-                self.category.delete(0, tk.END)
-                self.actions.delete(0, tk.END)
-                self.entry_price.delete(0, tk.END)
-
-                self.entry_description.insert(0, row[1])
-                self.category.insert(0, row[2])
-                self.actions.insert(0, row[3])
-                self.entry_price.insert(0, row[4])
-
-            except IndexError:
-                self.destroy()
-                messagebox.showwarning("Ошибка", "Выберите запись для изменения!")
+            self.destroy()
+            messagebox.showwarning("Ошибка", "Выберите запись для изменения!")
 
 
 class Search(tk.Toplevel):
