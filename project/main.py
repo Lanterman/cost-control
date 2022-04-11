@@ -279,9 +279,11 @@ class Search(tk.Toplevel):
     def search_records(self, description):
         """Поиск записей"""
         description = ('%' + description + '%',)
-        self.view.database.cursor.execute('''SELECT * FROM control WHERE description LIKE ?''', description)
+        data = self.view.database.connection.query(CostControl).filter(CostControl.description.like(description))
         [self.view.tree.delete(i) for i in self.view.tree.get_children()]
-        [self.view.tree.insert('', 'end', values=row) for row in self.view.database.cursor.fetchall()]
+        for row in data:
+            item = [row.id, row.description, row.category, row.costs, row.price, row.date]
+            self.view.tree.insert('', 'end', values=item)
 
 
 class Calculate(tk.Toplevel):
@@ -321,8 +323,7 @@ class Calculate(tk.Toplevel):
 
     def calculate(self):
         """Расчет финансов"""
-        self.database.cursor.execute("""SELECT costs, price FROM control""")
-        response = self.database.cursor.fetchall()
+        response = self.database.connection.query(CostControl.costs, CostControl.price)
         profit = round(sum([price for costs, price in response]), 2)
         income = round(sum([price for costs, price in response if costs == 'Доход']), 2)
         expenditure = round(sum([price for costs, price in response if costs == 'Расход']), 2)
@@ -330,8 +331,7 @@ class Calculate(tk.Toplevel):
 
     def description(self, response):
         """Дополнительная информация при расчете"""
-        self.database.cursor.execute("""SELECT * FROM control""")
-        mark = bool(self.database.cursor.fetchall())
+        mark = self.database.connection.query(CostControl)
         if not mark:
             text = 'Нет Записей'
         elif response < 0:
@@ -349,8 +349,7 @@ class Calculate(tk.Toplevel):
     def matplotlib(self):
         """Расчет и построение гистограммы"""
         # data
-        self.database.cursor.execute('''SELECT category, price FROM control WHERE costs="Расход"''')
-        data = self.database.cursor.fetchall()
+        data = self.database.connection.query(CostControl.category, CostControl.price).filter(CostControl.costs == 'Расход')
         cat = {'продукты': 0, 'транспорт': 0, 'связь': 0, 'работа': 0, 'хобби': 0, 'дом': 0, 'копилка': 0, 'другое': 0}
         for category, price in data:
             if category in cat:

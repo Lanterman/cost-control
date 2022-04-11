@@ -1,6 +1,6 @@
 from datetime import datetime
 from tkinter import messagebox
-from sqlalchemy import Column, String, Integer, create_engine
+from sqlalchemy import Column, String, Integer, create_engine, Float
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
@@ -14,7 +14,7 @@ class CostControl(Base):
     description = Column(String(50), nullable=False)
     category = Column(String(50))
     costs = Column(String(50))
-    price = Column(Integer, default=0)
+    price = Column(Float, default=0)
     date = Column(String, default=str(datetime.now())[:19])
 
     def __repr__(self):
