@@ -1,9 +1,9 @@
 import unittest
 
-from project.database import DataBase
+from project.database import DataBase, CostControl as CoCo
 
 
-class Main(unittest.TestCase):
+class TestMain(unittest.TestCase):
     """Проверка функционала кнопок"""
 
     def setUp(self):
@@ -17,43 +17,38 @@ class Main(unittest.TestCase):
 
     def delete_db(self):
         """Очистка базы данныз """
-        self.db.cursor.execute('''DELETE FROM control''')
+        self.db.connection.query(CoCo).delete()
         self.db.connection.commit()
 
     def test_clean_the_mark(self):
         """Проверка метода clean_the_mark()"""
-        self.db.cursor.execute('''SELECT ID, description, category, costs, price FROM control''')
-        data = self.db.cursor.fetchall()
-        exp_data = [
-            (1, 'зарплата', '---------', 'Доход', 1000.0),
-            (2, 'зашел в магазин', 'продукты', 'Расход', 1000.0)
-                    ]
+        reports = self.db.connection.query(CoCo)
+        self.assertEqual(len([*reports]), 2)
 
-        self.assertTrue(data)
-        self.assertEqual(data, exp_data)
+        [self.db.connection.delete(cost) for cost in reports]
+        self.db.connection.commit()
 
-        self.delete_db()
-
-        self.db.cursor.execute('''SELECT * FROM control''')
-        self.assertFalse(self.db.cursor.fetchall())
+        reports = self.db.connection.query(CoCo)
+        self.assertNotEqual(len([*reports]), 2)
 
     def test_delete_records(self):
         """Проверка метода delete_records()"""
-        self.db.cursor.execute('''SELECT ID, description, category, costs, price FROM control''')
-        data = self.db.cursor.fetchall()
+        reports = self.db.connection.query(CoCo.description, CoCo.category, CoCo.costs, CoCo.price)
         exp_data = [
-            (1, 'зарплата', '---------', 'Доход', 1000.0),
-            (2, 'зашел в магазин', 'продукты', 'Расход', 1000.0)
+            ('зарплата', '---------', 'Доход', 1000.0),
+            ('зашел в магазин', 'продукты', 'Расход', 1000.0)
         ]
 
-        self.assertTrue(data)
-        self.assertEqual(data, exp_data)
+        self.assertTrue(reports)
+        self.assertEqual([*reports], exp_data)
 
-        for selection_item in data:
-            self.db.cursor.execute('''DELETE FROM control WHERE id=?''', (str(selection_item[0])))
+        for selection_item in reports:
+            reports = self.db.connection.query(CoCo).filter_by(description=selection_item[0])
+            self.db.connection.delete(reports[0])
+        self.db.connection.commit()
 
-        self.db.cursor.execute('''SELECT * FROM control''')
-        self.assertFalse(self.db.cursor.fetchall())
+        reports = self.db.connection.query(CoCo)
+        self.assertNotEqual([*reports], exp_data)
 
 
 class TestUpdate(unittest.TestCase):
@@ -82,27 +77,25 @@ class TestCalculate(unittest.TestCase):
 
     def delete_db(self):
         """Очистка базы данныз """
-        self.db.cursor.execute('''DELETE FROM control''')
+        self.db.connection.query(CoCo).delete()
         self.db.connection.commit()
 
     def test_calculate(self):
         """Проверка расчет финансов"""
-        self.db.cursor.execute("""SELECT costs, price FROM control""")
-        response = self.db.cursor.fetchall()
+        reports = self.db.connection.query(CoCo.costs, CoCo.price)
         data = [('Доход', 1000.0), ('Расход', -1000.0)]
-        profit = round(sum([price for costs, price in response]), 2)
-        income = round(sum([price for costs, price in response if costs == 'Доход']), 2)
-        expenditure = round(sum([price for costs, price in response if costs == 'Расход']), 2)
+        profit = round(sum([price for costs, price in reports]), 2)
+        income = round(sum([price for costs, price in reports if costs == 'Доход']), 2)
+        expenditure = round(sum([price for costs, price in reports if costs == 'Расход']), 2)
 
-        self.assertEqual(response, data)
+        self.assertEqual([*reports], data)
         self.assertEqual(profit, 0.0)
         self.assertEqual(income, 1000.0)
         self.assertEqual(expenditure, -1000.0)
 
     def test_description(self):
         """Проверка дополнительной информация при расчете"""
-        self.db.cursor.execute("""SELECT costs, price FROM control""")
-        mark = self.db.cursor.fetchall()
+        mark = self.db.connection.query(CoCo.costs, CoCo.price)
         data = [('Доход', 1000.0), ('Расход', -1000.0)]
         response = round(sum([price for costs, price in mark]), 2)
         if not mark:
@@ -119,29 +112,29 @@ class TestCalculate(unittest.TestCase):
             text = f'Все под контролем, можно сходить на шопинг. Примерно допустимая сумма затрат {response - 300} BYN!'
 
         self.assertTrue(mark)
-        self.assertEqual(mark, data)
+        self.assertEqual([*mark], data)
         self.assertEqual(response, 0.0)
         self.assertEqual(text, 'От зарплаты до зарплаты ?')
 
     def test_matplotlib(self):
         """Проверка расчета гистограммы"""
-        self.db.cursor.execute('''SELECT category, price FROM control WHERE costs="Расход"''')
-        data = self.db.cursor.fetchall()
-        cat = {'продукты': 0, 'транспорт': 0, 'связь': 0, 'работа': 0, 'хобби': 0, 'дом': 0, 'копилка': 0, 'другое': 0}
+        reports = self.db.connection.query(CoCo.category, CoCo.price).filter(CoCo.costs == 'Расход')
+        categories = {'продукты': 0, 'транспорт': 0, 'связь': 0, 'работа': 0, 'хобби': 0, 'дом': 0, 'копилка': 0,
+                      'другое': 0}
 
-        for category, price in data:
-            if category in cat:
-                cat[category] += price
+        for category, price in reports:
+            if category in categories:
+                categories[category] += price
             else:
-                cat['другое'] += price
+                categories['другое'] += price
 
-        x = list(cat.keys())
-        y = [-1 * cat[i] for i in cat]
+        x = list(categories.keys())
+        y = [-1 * categories[category] for category in categories]
 
-        self.assertTrue(data)
-        self.assertEqual(len(data), 1)
-        self.assertEqual(cat['продукты'], -1000)
-        self.assertEqual(cat['другое'], 0)
+        self.assertTrue(reports)
+        self.assertEqual(len([*reports]), 1)
+        self.assertEqual(categories['продукты'], -1000)
+        self.assertEqual(categories['другое'], 0)
         self.assertEqual(x, ['продукты', 'транспорт', 'связь', 'работа', 'хобби', 'дом', 'копилка', 'другое'])
         self.assertEqual(y, [1000, 0, 0, 0, 0, 0, 0, 0])
 

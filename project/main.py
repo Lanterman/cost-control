@@ -82,8 +82,8 @@ class Main(tk.Frame):
     def clean_the_mark(self):
         """Удаление всех записей"""
         if messagebox.askokcancel('Подтверждение действия', 'Вы действительно хотите удалить все записи?'):
-            data = self.database.connection.query(CostControl)
-            [self.database.connection.delete(cost) for cost in data]
+            reports = self.database.connection.query(CostControl)
+            [self.database.connection.delete(cost) for cost in reports]
             self.database.connection.commit()
             self.view_records()
 
@@ -91,18 +91,19 @@ class Main(tk.Frame):
         """Удаление выбранных записей"""
         if self.tree.selection():
             for selection_item in self.tree.selection():
-                data = self.database.connection.query(CostControl).filter_by(id=(self.tree.set(selection_item, '#1')))
-                self.database.connection.delete(data[0])
+                reports = self.database.connection.query(CostControl).filter_by(id=(self.tree.set(selection_item, '#1')))
+                self.database.connection.delete(reports[0])
         else:
             messagebox.showwarning("Ошибка", "Выберите запись(-и) для удаления!")
         self.database.connection.commit()
         self.view_records()
 
-    def view_records(self):
+    def view_records(self, reports=None):
         """Вывод всех записей на главном окне"""
-        data = self.database.connection.query(CostControl)
+        if not reports:
+            reports = self.database.connection.query(CostControl)
         [self.tree.delete(i) for i in self.tree.get_children()]
-        for row in data:
+        for row in reports:
             item = [row.id, row.description, row.category, row.costs, row.price, row.date]
             self.tree.insert('', 'end', values=item)
 
@@ -218,7 +219,7 @@ class Update(Child):
             price = self.validate.control_of_filling_the_price(costs, price)
             if costs == 'Доход':
                 category = '---------'
-            self.data.update(values={'description': description, 'category': category, 'costs': costs, 'price': price})
+            self.reports.update(values={'description': description, 'category': category, 'costs': costs, 'price': price})
             self.database.connection.commit()
             self.view.view_records()
 
@@ -228,17 +229,17 @@ class Update(Child):
             self.destroy()
             messagebox.showwarning("Ошибка", "За раз можно обновить 1 запись!")
         elif self.view.tree.selection():
-            self.data = self.database.connection.query(CostControl).filter_by(
+            self.reports = self.database.connection.query(CostControl).filter_by(
                 id=(self.view.tree.set(self.view.tree.selection(), '#1')))
 
             self.category.delete(0, tk.END)
             self.actions.delete(0, tk.END)
             self.entry_price.delete(0, tk.END)
 
-            self.entry_description.insert(0, self.data[0].description)
-            self.category.insert(0, self.data[0].category)
-            self.actions.insert(0, self.data[0].costs)
-            self.entry_price.insert(0, self.data[0].price)
+            self.entry_description.insert(0, self.reports[0].description)
+            self.category.insert(0, self.reports[0].category)
+            self.actions.insert(0, self.reports[0].costs)
+            self.entry_price.insert(0, self.reports[0].price)
             self.database.connection.commit()
         else:
             self.destroy()
@@ -279,11 +280,8 @@ class Search(tk.Toplevel):
     def search_records(self, description):
         """Поиск записей"""
         description = ('%' + description + '%',)
-        data = self.view.database.connection.query(CostControl).filter(CostControl.description.like(description))
-        [self.view.tree.delete(i) for i in self.view.tree.get_children()]
-        for row in data:
-            item = [row.id, row.description, row.category, row.costs, row.price, row.date]
-            self.view.tree.insert('', 'end', values=item)
+        reports = self.view.database.connection.query(CostControl).filter(CostControl.description.like(description))
+        self.view.view_records(reports)
 
 
 class Calculate(tk.Toplevel):
@@ -323,10 +321,10 @@ class Calculate(tk.Toplevel):
 
     def calculate(self):
         """Расчет финансов"""
-        response = self.database.connection.query(CostControl.costs, CostControl.price)
-        profit = round(sum([price for costs, price in response]), 2)
-        income = round(sum([price for costs, price in response if costs == 'Доход']), 2)
-        expenditure = round(sum([price for costs, price in response if costs == 'Расход']), 2)
+        reports = self.database.connection.query(CostControl.costs, CostControl.price)
+        profit = round(sum([price for costs, price in reports]), 2)
+        income = round(sum([price for costs, price in reports if costs == 'Доход']), 2)
+        expenditure = round(sum([price for costs, price in reports if costs == 'Расход']), 2)
         return [profit, income, expenditure]
 
     def description(self, response):
@@ -348,19 +346,21 @@ class Calculate(tk.Toplevel):
 
     def matplotlib(self):
         """Расчет и построение гистограммы"""
-        # data
-        data = self.database.connection.query(CostControl.category, CostControl.price).filter(CostControl.costs == 'Расход')
-        cat = {'продукты': 0, 'транспорт': 0, 'связь': 0, 'работа': 0, 'хобби': 0, 'дом': 0, 'копилка': 0, 'другое': 0}
-        for category, price in data:
-            if category in cat:
-                cat[category] += price
+        # data acquisition
+        reports = self.database.connection.query(CostControl.category,
+                                                 CostControl.price).filter(CostControl.costs == 'Расход')
+        categories = {'продукты': 0, 'транспорт': 0, 'связь': 0, 'работа': 0, 'хобби': 0, 'дом': 0, 'копилка': 0,
+                      'другое': 0}
+        for category, price in reports:
+            if category in categories:
+                categories[category] += price
             else:
-                cat['другое'] += price
+                categories['другое'] += price
 
-        x = list(cat.keys())
-        y = [-1 * cat[i] for i in cat]
+        x = list(categories.keys())
+        y = [-1 * categories[category] for category in categories]
 
-        # build
+        # building a histogram
         plt.title('Контроль расходов', fontsize=14)
         plt.xlabel('Категории', fontsize=12)
         plt.ylabel('Сумма, BYN', fontsize=12)
@@ -380,5 +380,5 @@ if __name__ == '__main__':
     window.title('Cost control')
     window.geometry('800x430+300+200')
     window.resizable(False, False)
-    tk.Label(text='Version 1.1').pack()
+    tk.Label(text='Version 1.2').pack()
     app.mainloop()

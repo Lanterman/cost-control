@@ -1,6 +1,7 @@
 import unittest
 
 from project.database import DataBase, ValidateData
+from project.database import CostControl as CoCo
 
 
 class TestDataBase(unittest.TestCase):
@@ -16,16 +17,15 @@ class TestDataBase(unittest.TestCase):
 
     def delete_db(self):
         """Очистка базы данныз """
-        self.db.cursor.execute('''DELETE FROM control''')
+        self.db.connection.query(CoCo).delete()
         self.db.connection.commit()
 
     def test_insert_data(self):
         """Проверка метода insert_data()"""
-        self.db.cursor.execute('''SELECT ID, description, category, costs, price FROM control''')
-        response = self.db.cursor.fetchall()
+        response = self.db.connection.query(CoCo.description, CoCo.category, CoCo.costs, CoCo.price)
         obj_1, obj_2 = response[0], response[1]
-        data_1 = (1, 'зарплата', '---------', 'Доход', 1000.0)
-        data_2 = (2, 'зашел в магазин', 'продукты', 'Расход', 1000.0)
+        data_1 = ('зарплата', '---------', 'Доход', 1000.0)
+        data_2 = ('зашел в магазин', 'продукты', 'Расход', 1000.0)
 
         self.assertEqual(obj_1, data_1)
         self.assertEqual(obj_2, data_2)
