@@ -20,6 +20,9 @@ class CostControl(Base):
     def __repr__(self):
         return f'{self.id} - {self.description}: {self.costs} - {self.price}'
 
+    def __str__(self):
+        return self.description
+
 
 class DataBase:
     """Создание/вызов базы данных"""

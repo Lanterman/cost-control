@@ -1,0 +1,103 @@
+# :kivy 2.1.0
+
+<MainWindow>:
+    orientation: 'vertical'
+
+    MDToolbar:
+        title: "Cost Control"
+
+    MDBoxLayout:
+        orientation: 'horizontal'
+
+        MDBottomNavigation:
+            id: bottom_nav
+
+            MDBottomNavigationItem:
+                name: "screen main"
+                icon: "calendar-text-outline"
+
+                MDBoxLayout:
+                    orientation: 'vertical'
+                    MDBoxLayout:
+                        MDTextField:
+                            id: search_id
+                            hint_text: "search"
+
+                        MDRectangleFlatButton:
+                            text: "Search"
+                    ScrollView:
+                        size_hint: 1, 8
+                        MDList:
+                            id: all_report
+                    MDIconButton:
+                        icon: 'phone'
+                        on_release:
+                            app.all_reports()
+
+
+
+            MDBottomNavigationItem:
+                name: "screen search"
+                icon: "magnify"
+
+                MDBoxLayout:
+                    orientation: 'vertical'
+                    MDTextField:
+                        id: search_id
+                        hint_text: "search"
+
+                    MDRectangleFlatButton:
+                        text: "Search"
+                        on_release:
+                            app.searching_results(root.ids.search_id.text)
+                    ScrollView:
+                        size_hint: 1, 8
+                        MDList:
+                            id: search_result
+
+
+
+            MDBottomNavigationItem:
+                name: "screen add"
+                icon: "plus-box"
+
+                MDBoxLayout:
+                    orientation: "vertical"
+                    MDTextField:
+                        id: add_description
+                        hint_text: "Введите описание"
+                        multiline: True
+                    MDTextField:
+                        id: add_category
+                        hint_text: "Введите категорию"
+                    MDTextField:
+                        id: add_cost
+                        hint_text: "Введите cost"
+                    MDTextField:
+                        id: add_price
+                        hint_text: "Введите price"
+                    Widget:
+                    MDFloatingActionButton:
+                        icon: "plus"
+                        pos_hint: {'right': 0.95}
+                        on_release:
+                            app.insert_data(root.ids.add_description.text,
+                            root.ids.add_category.text,
+                            root.ids.add_cost.text,
+                            root.ids.add_price.text)
+
+            MDBottomNavigationItem:
+                name: "screen refresh"
+                icon: "refresh"
+
+            MDBottomNavigationItem:
+                name: "screen clear"
+                icon: "database-remove-outline"
+
+<SearchResultItem>:
+    IconLeftWidget:
+        icon: "phone"
+    RightButton:
+        icon: "minus"
+        on_release:
+            root.delete_report()
