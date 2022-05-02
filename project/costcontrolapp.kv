@@ -39,7 +39,6 @@
                         size_hint: 1, 8
                         MDList:
                             id: show_result
-                            bg_color: "green"
 
             MDBottomNavigationItem:
                 name: "screen add"
@@ -90,8 +89,14 @@
     IconLeftWidget:
         pos_hint: {"center_y": 0.4}
         icon: "language-python"
-    RightButton:
+    IconRightWidget:
         id: button
-        icon: "minus"
+        icon: "dots-vertical"
         on_release:
-            root.menu.open()
+            root.show_menu()
+
+<MDDropdownMenu>:
+    width_mult: 1.6
+    max_height: 147
+    radius: [24, 24, 24, 24]
+    background_color: [.06,0.85,0.86,1]
