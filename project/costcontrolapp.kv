@@ -5,57 +5,41 @@
 
     MDToolbar:
         title: "Cost Control"
+        MDIconButton:
+            icon: 'eye'
+            pos_hint: {"center_x": 0.5, "center_y": .5}
+            on_release: app.all_reports()
 
     MDBoxLayout:
         orientation: 'horizontal'
-
         MDBottomNavigation:
             id: bottom_nav
 
             MDBottomNavigationItem:
+                id: main
                 name: "screen main"
                 icon: "calendar-text-outline"
 
                 MDBoxLayout:
                     orientation: 'vertical'
+                    padding: 5
                     MDBoxLayout:
+                        size_hint: 1, 1
                         MDTextField:
                             id: search_id
+                            font_size: 18
                             hint_text: "search"
-
-                        MDRectangleFlatButton:
+                        MDRaisedButton:
                             text: "Search"
+                            font_size: 16
+                            pos_hint: {"center_x": 0.5, "center_y": .4}
+                            on_release:
+                                app.searching_results(root.ids.search_id.text)
                     ScrollView:
                         size_hint: 1, 8
                         MDList:
-                            id: all_report
-                    MDIconButton:
-                        icon: 'phone'
-                        on_release:
-                            app.all_reports()
-
-
-
-            MDBottomNavigationItem:
-                name: "screen search"
-                icon: "magnify"
-
-                MDBoxLayout:
-                    orientation: 'vertical'
-                    MDTextField:
-                        id: search_id
-                        hint_text: "search"
-
-                    MDRectangleFlatButton:
-                        text: "Search"
-                        on_release:
-                            app.searching_results(root.ids.search_id.text)
-                    ScrollView:
-                        size_hint: 1, 8
-                        MDList:
-                            id: search_result
-
-
+                            id: show_result
+                            bg_color: "green"
 
             MDBottomNavigationItem:
                 name: "screen add"
@@ -87,17 +71,27 @@
                             root.ids.add_price.text)
 
             MDBottomNavigationItem:
-                name: "screen refresh"
-                icon: "refresh"
+                name: "screen cost"
+                icon: "currency-usd"
+
+                MDLabel:
+                    text: "In developing"
+                    halign: 'center'
 
             MDBottomNavigationItem:
                 name: "screen clear"
                 icon: "database-remove-outline"
 
+                MDLabel:
+                    text: "In developing"
+                    halign: 'center'
+
 <SearchResultItem>:
     IconLeftWidget:
-        icon: "phone"
+        pos_hint: {"center_y": 0.4}
+        icon: "language-python"
     RightButton:
+        id: button
         icon: "minus"
         on_release:
-            root.delete_report()
+            root.menu.open()
