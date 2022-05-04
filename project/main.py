@@ -1,11 +1,12 @@
 from kivy.core.window import Window
+from kivymd.uix.button import MDIconButton
 from kivymd.uix.label import MDLabel
 from kivymd.uix.menu import MDDropdownMenu
 
 from project.database import DataBase, CostControl
 from kivymd.app import MDApp
 from kivymd.uix.boxlayout import MDBoxLayout
-from kivymd.uix.list import ThreeLineAvatarIconListItem
+from kivymd.uix.list import ThreeLineAvatarIconListItem, ILeftBody
 
 Window.size = (370, 720)
 
@@ -14,9 +15,13 @@ class MainWindow(MDBoxLayout):
     pass
 
 
-class SearchResultItem(ThreeLineAvatarIconListItem):
+class LeftIconOfWidget(ILeftBody, MDIconButton):  # Исправить, чтоб кнопка не нажималась
+    pass
+
+
+class MainNavigationItem(ThreeLineAvatarIconListItem):
     def __init__(self, report_id, db, **kwargs):
-        super(SearchResultItem, self).__init__(**kwargs)
+        super(MainNavigationItem, self).__init__(**kwargs)
         self.db = db
         self.report_id = report_id
 
@@ -50,33 +55,24 @@ class CostControlApp(MDApp):
 
     def all_reports(self):
         result = self.db.connection.query(CostControl).all()
-        app = MDApp.get_running_app()
-        result_list_widget = app.root.ids.show_result
-        result_list_widget.clear_widgets()
-        if result:
-            for report in result:
-                space = 27 - len(report.costs) - len(str(report.price))
-                result_list_widget.add_widget(
-                    SearchResultItem(text=f'{report.description}',
-                                     secondary_text=report.costs + space * " " + str(report.price) + ' BYN',
-                                     report_id=report.id, db=db, tertiary_text=f'{report.date}')
-                )
-        else:
-            result_list_widget.add_widget(MDLabel(text="Нет записей", halign='center'))
+        self.show_results(result)
 
     def searching_results(self, query):
         query = f'%{query}%'
         result = self.db.connection.query(CostControl).filter(CostControl.description.ilike(query)).all()
+        self.show_results(result)
+
+    def show_results(self, query):
         app = MDApp.get_running_app()
         result_list_widget = app.root.ids.show_result
         result_list_widget.clear_widgets()
-        if result:
-            for report in result:
+        if query:
+            for report in query:
                 space = 27 - len(report.costs) - len(str(report.price))
                 result_list_widget.add_widget(
-                    SearchResultItem(text=f'{report.description}',
-                                     secondary_text=report.costs + space * " " + str(report.price) + ' BYN',
-                                     report_id=report.id, db=db, tertiary_text=f'{report.date}')
+                    MainNavigationItem(text=f'{report.description}',
+                                       secondary_text=report.costs + space * " " + str(report.price) + ' BYN',
+                                       report_id=report.id, db=db, tertiary_text=f'{report.date}')
                 )
         else:
             result_list_widget.add_widget(MDLabel(text="Нет записей", halign='center'))
