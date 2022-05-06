@@ -1,12 +1,15 @@
 from kivy.core.window import Window
-from kivymd.uix.button import MDIconButton
+from kivy.uix.widget import Widget
+from kivymd.uix.button import MDFloatingActionButton
+from kivymd.uix.dialog import MDDialog
 from kivymd.uix.label import MDLabel
 from kivymd.uix.menu import MDDropdownMenu
+from kivymd.uix.textfield import MDTextField
 
 from project.database import DataBase, CostControl
 from kivymd.app import MDApp
 from kivymd.uix.boxlayout import MDBoxLayout
-from kivymd.uix.list import ThreeLineAvatarIconListItem, ILeftBody
+from kivymd.uix.list import ThreeLineAvatarIconListItem
 
 Window.size = (370, 720)
 
@@ -15,8 +18,38 @@ class MainWindow(MDBoxLayout):
     pass
 
 
-class LeftIconOfWidget(ILeftBody, MDIconButton):  # Исправить, чтоб кнопка не нажималась
+class IfNoRecords(MDLabel):
     pass
+
+
+class BoxClassEditReport(MDBoxLayout):
+    def __init__(self, name, value, **kwargs):
+        super().__init__(**kwargs)
+        self.name = name
+        self.value = value
+        self.box()
+
+    def box(self):
+        self.add_widget(MDLabel(text=self.name))
+        self.add_widget(MDTextField(text=self.value))
+
+
+class ClassEditReport(MDBoxLayout):
+    def __init__(self, db, report_id, **kwargs):
+        super().__init__(**kwargs)
+        self.db = db
+        self.report_id = report_id
+        self.test()
+
+    def test(self):
+        report = self.db.connection.query(CostControl).filter_by(id=self.report_id)
+        for item in report:
+            self.add_widget(BoxClassEditReport(name='Description', value=item.description))
+            self.add_widget(BoxClassEditReport(name='Category', value=item.category))
+            self.add_widget(BoxClassEditReport(name='Costs', value=item.costs))
+            self.add_widget(BoxClassEditReport(name='Price', value=str(item.price)))
+            self.add_widget(Widget())
+            self.add_widget(MDFloatingActionButton(icon="plus"))
 
 
 class MainNavigationItem(ThreeLineAvatarIconListItem):
@@ -33,13 +66,28 @@ class MainNavigationItem(ThreeLineAvatarIconListItem):
         self.menu = MDDropdownMenu(caller=self.ids.button, items=items)
         self.menu.open()
 
-    def show_report(self):
+    def show_report(self):  # Применить Item или content_cls
         self.menu.dismiss()
-        print('Done!')
+        report = self.db.connection.query(CostControl).filter_by(id=self.report_id)
+        for item in report:
+            self.dialog = MDDialog(
+                title=12 * " " + 'All information',
+                text=f"Description:       {item.description}\n\n"
+                     f"Category:           {item.category}\n\n"
+                     f"Cost:                   {item.costs}\n\n"
+                     f"Price:                  {item.price}\n\n"
+                     f"Date:                   {item.date}"
+            )
+        self.dialog.open()
 
     def edit_report(self):
         self.menu.dismiss()
-        print(self.ids.button)
+        dialog = MDDialog(
+            title=18 * " " + "Edit report",
+            type="custom",
+            content_cls=ClassEditReport(self.db, self.report_id)
+        )
+        dialog.open()
 
     def delete_report(self):
         self.db.connection.query(CostControl).filter_by(id=self.report_id).delete()
@@ -75,7 +123,7 @@ class CostControlApp(MDApp):
                                        report_id=report.id, db=db, tertiary_text=f'{report.date}')
                 )
         else:
-            result_list_widget.add_widget(MDLabel(text="Нет записей", halign='center'))
+            result_list_widget.add_widget(IfNoRecords())
 
     def insert_data(self, description, category, cost, price):
         self.db.insert_data(description, category, cost, price)

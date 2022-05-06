@@ -92,8 +92,8 @@
 <MainNavigationItem>:
     text_color: [0.67, 0.23, 0.23, 1]
     theme_text_color: "Custom"
-    LeftIconOfWidget:
-        pos_hint: {"center_y": 0.4}
+    MDIcon:
+        pos_hint: {"center_x": 0.57, "center_y": 0.5}
         icon: "language-python"
     IconRightWidget:
         id: button
@@ -107,5 +107,17 @@
     radius: [24, 24, 24, 24]
     background_color: [.66, 0.88, 0.92, 1]
 
-<MDLabel>:
-    pos_hint: {"center_y": 0.5}
+<IfNoRecords>:
+    halign: "center"
+    text: "No records"
+    theme_text_color: "Custom"
+    text_color: 0.89, 0.39, 0.26, 1
+
+<ClassEditReport>
+    orientation: "vertical"
+    spacing: "12dp"
+    size_hint_y: None
+    height: "400dp"
+
+<BoxClassEditReport>:
+    orientation: "vertical"
