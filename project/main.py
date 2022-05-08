@@ -18,18 +18,61 @@ class MainWindow(MDBoxLayout):
     pass
 
 
+class DropdownMenuFunctionsOfReport(MDDropdownMenu):
+    pass
+
+
 class IfNoRecords(MDLabel):
     pass
 
 
-class BoxClassEditReport(MDBoxLayout):
+class DropDownMenuReportsBox(MDDropdownMenu):
+    pass
+
+
+class BoxSelectItemEditReport(MDBoxLayout):
     def __init__(self, name, value, **kwargs):
         super().__init__(**kwargs)
         self.name = name
         self.value = value
-        self.box()
+        self.default_values()
 
-    def box(self):
+    def default_values(self):
+        self.ids.drop_item_category.set_item(self.value)
+        self.ids.drop_item_costs.set_item("hi")
+
+    def drop_down_category_menu(self):
+        category = ('---------', 'продукты', 'транспорт', 'связь', 'работа', 'хобби', 'дом', 'копилка')
+        menu_items = [{"text": item, "viewclass": "OneLineListItem",
+                       "on_release": lambda x=item: self.set_item_category(x)} for item in category]
+        self.menu = DropDownMenuReportsBox(caller=self.ids.drop_item_category, items=menu_items)
+        self.menu.open()
+
+    def drop_down_costs_menu(self):
+        costs = ('Расход', 'Доход')
+        menu_items = [{"text": item, "viewclass": "OneLineListItem",
+                       "on_release": lambda x=item: self.set_item_costs(x)} for item in costs]
+        self.menu = DropDownMenuReportsBox(caller=self.ids.drop_item_category, items=menu_items)
+        self.menu.open()
+
+    def set_item_category(self, item):
+        self.ids.drop_item_category.set_item(item)
+        self.menu.dismiss()
+
+    def set_item_costs(self, item):
+        self.ids.drop_item_costs.set_item(item)
+        self.menu.dismiss()
+
+
+class BoxItemEditReport(MDBoxLayout):
+    def __init__(self, name, value, **kwargs):
+        super().__init__(**kwargs)
+        self.required = True
+        self.name = name
+        self.value = value
+        self.add_box_item()
+
+    def add_box_item(self):
         self.add_widget(MDLabel(text=self.name))
         self.add_widget(MDTextField(text=self.value))
 
@@ -39,15 +82,14 @@ class ClassEditReport(MDBoxLayout):
         super().__init__(**kwargs)
         self.db = db
         self.report_id = report_id
-        self.test()
+        self.box_widget()
 
-    def test(self):
+    def box_widget(self):
         report = self.db.connection.query(CostControl).filter_by(id=self.report_id)
         for item in report:
-            self.add_widget(BoxClassEditReport(name='Description', value=item.description))
-            self.add_widget(BoxClassEditReport(name='Category', value=item.category))
-            self.add_widget(BoxClassEditReport(name='Costs', value=item.costs))
-            self.add_widget(BoxClassEditReport(name='Price', value=str(item.price)))
+            self.add_widget(BoxItemEditReport(name='Description', value=item.description))
+            self.add_widget(BoxSelectItemEditReport(name='Category', value=item.category))
+            self.add_widget(BoxItemEditReport(name='Price', value=str(item.price)))
             self.add_widget(Widget())
             self.add_widget(MDFloatingActionButton(icon="plus"))
 
@@ -63,7 +105,7 @@ class MainNavigationItem(ThreeLineAvatarIconListItem):
                  {"text": "Edit", "viewclass": "OneLineListItem", "on_release": lambda: self.edit_report()},
                  {"text": "Remove", "viewclass": "OneLineListItem", "on_release": lambda: self.delete_report()}
                  ]
-        self.menu = MDDropdownMenu(caller=self.ids.button, items=items)
+        self.menu = DropdownMenuFunctionsOfReport(caller=self.ids.button, items=items)
         self.menu.open()
 
     def show_report(self):  # Применить Item или content_cls
