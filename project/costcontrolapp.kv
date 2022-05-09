@@ -113,23 +113,17 @@
     theme_text_color: "Custom"
     text_color: 0.89, 0.39, 0.26, 1
 
-<ClassEditReport>
+<BoxItemEditReport>:
     orientation: "vertical"
     spacing: "12dp"
     size_hint_y: None
     height: "400dp"
-
-<DropDownMenuReportsBox>:
-    width_mult: 1.8
-    max_height: 387
-    divider: "inset"
-    radius: [24, 24, 24, 24]
-    background_color: [.66, 0.88, 0.92, 1]
-
-
-
-<BoxSelectItemEditReport>:
-    orientation: "vertical"
+    BoxLayout:
+        MDLabel:
+            text: "Description"
+        MDTextField:
+            id: changed_description
+            required: True
     BoxLayout:
         MDLabel:
             text: "Category"
@@ -137,10 +131,34 @@
             id: drop_item_category
             on_release:
                 root.drop_down_category_menu()
+
     BoxLayout:
         MDLabel:
-            text: "Category"
+            text: "Cost"
         MDDropDownItem:
             id: drop_item_costs
             on_release:
                 root.drop_down_costs_menu()
+
+    BoxLayout:
+        MDLabel:
+            text: "Price"
+        MDTextField:
+            id: changed_price
+            text: "1"
+    Widget:
+    MDRaisedButton:
+        text: "Apply"
+        pos_hint: {'right': 0.9}
+        on_release:
+            root.apply_change(root.ids.changed_description.text,
+            root.ids.drop_item_category.ids.label_item.text,
+            root.ids.drop_item_costs.ids.label_item.text,
+            root.ids.changed_price.text)
+
+<DropDownMenuReportsBox>:
+    width_mult: 1.9
+    max_height: 387
+    divider: "inset"
+    radius: [24, 24, 24, 24]
+    background_color: [.66, 0.88, 0.92, 1]
