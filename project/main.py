@@ -93,14 +93,14 @@ class MainNavigationItem(ThreeLineAvatarIconListItem):
         self.menu = DropdownMenuFunctionsOfReport(caller=self.ids.button, items=items)
         self.menu.open()
 
-    def show_report(self):  # Применить Item или content_cls
+    def show_report(self):
         self.menu.dismiss()
         dialog_show_report = MDDialog(
             title=12 * " " + 'All information',
             text=f"Description:       {self.report.description}\n\n"
                  f"Category:           {self.report.category}\n\n"
                  f"Cost:                   {self.report.costs}\n\n"
-                 f"Price:                  {self.report.price}\n\n"
+                 f"Price:                  {self.report.price} BYN\n\n"
                  f"Date:                   {self.report.date}"
         )
         dialog_show_report.open()
@@ -153,7 +153,6 @@ class CostControlApp(MDApp):
 
     def insert_data(self, description, category, cost, price):
         self.db.insert_data(description, category, cost, price)
-
         app = MDApp.get_running_app()
         screen_manager = app.root.ids.bottom_nav
         self.all_reports()
