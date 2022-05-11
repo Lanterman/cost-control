@@ -1,6 +1,6 @@
 from datetime import datetime
 from tkinter import messagebox
-from sqlalchemy import Column, String, Integer, create_engine, Float
+from sqlalchemy import Column, String, Integer, create_engine, Float, desc
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
@@ -32,15 +32,27 @@ class DataBase:
         session = sessionmaker(engine)
         self.connection = session()
 
-    def insert_data(self, description, category, costs, price):
+    def retrieve(self, report_id):
+        report = self.connection.query(CostControl).get(report_id)
+        return report
+
+    def list(self, query=None):
+        if query:
+            reports = self.connection.query(CostControl).filter(
+                CostControl.description.ilike(query)).order_by(desc(CostControl.date)).all()
+        else:
+            reports = self.connection.query(CostControl).order_by(desc(CostControl.date)).all()
+        return reports
+
+    def insert_data(self, description, category, cost, price):
         """Добавление записей в базу"""
-        if costs == 'Доход':
-            category = '---------'
-        cost = CostControl(description=description, category=category, costs=costs, price=price)
+        category, price = ValidateData.control_of_filling_the_price_and_category(category, cost, price)
+        cost = CostControl(description=description, category=category, costs=cost, price=price)
         self.connection.add(cost)
         self.connection.commit()
 
-    def apply_change(self, instance, description, category, cost, price):
+    def update(self, instance, description, category, cost, price):
+        category, price = ValidateData.control_of_filling_the_price_and_category(category, cost, price)
         instance.description = description
         instance.category = category
         instance.costs = cost
@@ -49,22 +61,24 @@ class DataBase:
         self.connection.add(instance)
         self.connection.commit()
 
+    def delete(self, report_id):
+        self.connection.query(CostControl).filter_by(id=report_id).delete()
+        # self.connection.commit()
+
 
 class ValidateData:
     """Валидатор полей"""
 
     @staticmethod
-    def validate_data(category, costs, price):
+    def validate_data(description, category, costs, price):
         """Валидатор полей"""
         information = 'P.S. Десятичные писать через точку!'
-        if category not in ('---------', 'продукты', 'транспорт', 'связь', 'работа', 'хобби', 'дом', 'копилка'):
+        if not description:
+            return False
+        elif category not in ('---------', 'продукты', 'транспорт', 'связь', 'работа', 'хобби', 'дом', 'копилка'):
             messagebox.showwarning("Ошибка заполнения!", f"Нет такой категории - '{category}'!")
         elif not costs:
             messagebox.showwarning("Ошибка заполнения!", "Обязаное поле для заполенения!")
-        elif costs == '---------':
-            messagebox.showwarning("Ошибка заполнения!", "Выберите действие!")
-        elif costs not in ('Расход', 'Доход'):
-            messagebox.showwarning("Ошибка заполнения!", f"Нет такого действия - '{costs}'!")
         elif not price:
             messagebox.showwarning("Ошибка заполнения!", "Сумма не может быть пустой!")
         elif price:
@@ -77,10 +91,14 @@ class ValidateData:
                 return True
 
     @staticmethod
-    def control_of_filling_the_price(cost, price):
+    def control_of_filling_the_price_and_category(category, cost, price):
         """Конроль знака в зависимости от действия"""
+        if cost == 'Доход':
+            category = '---------'
+        if not price:
+            price = '0'
         if cost == 'Расход' and price[0] != '-':
             price = '-' + price
         elif cost == 'Доход' and price[0] == '-':
             price = price[1:]
-        return round(float(price), 2)
+        return category, round(float(price), 2)

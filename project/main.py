@@ -3,9 +3,8 @@ from kivymd.uix.dialog import MDDialog
 from kivymd.uix.label import MDLabel
 from kivymd.uix.menu import MDDropdownMenu
 from kivymd.uix.snackbar import Snackbar
-from sqlalchemy import desc
 
-from project.database import DataBase, CostControl
+from project.database import DataBase
 from kivymd.app import MDApp
 from kivymd.uix.boxlayout import MDBoxLayout
 from kivymd.uix.list import ThreeLineAvatarIconListItem
@@ -54,9 +53,10 @@ class AbstractClassForDropDownMenu(MDBoxLayout):
 
 
 class BoxItemEditReport(AbstractClassForDropDownMenu):
+
     def __init__(self, report_id, **kwargs):
         super().__init__(**kwargs)
-        self.report = db.connection.query(CostControl).get(report_id)
+        self.report = db.retrieve(report_id)
         self.default_values()
 
     def default_values(self):
@@ -66,13 +66,14 @@ class BoxItemEditReport(AbstractClassForDropDownMenu):
         self.ids.changed_price.set_text(instance=None, text=str(self.report.price))
 
     def apply_change(self, description, category, cost, price):
-        db.apply_change(self.report, description, category, cost, price)
+        db.update(self.report, description, category, cost, price)
         Snackbar(text=25 * " " + f"Record {self.report.id} updated!", font_size=18).open()
         app = MDApp.get_running_app()
-        app.all_reports()
+        app.root.ids.main_nav.all_reports()
 
 
 class RecordWidget(ThreeLineAvatarIconListItem):
+
     def __init__(self, instance, **kwargs):
         super(RecordWidget, self).__init__(**kwargs)
         self.instance = instance
@@ -107,46 +108,28 @@ class RecordWidget(ThreeLineAvatarIconListItem):
         dialog_edit_report.open()
 
     def delete_report(self):
-        db.connection.query(CostControl).filter_by(id=self.instance.id).delete()
+        db.delete(self.instance.id)
         self.parent.remove_widget(self)
         self.menu.dismiss()
-        db.connection.commit()
 
 
 class MainNavigationItem(MDBoxLayout):
 
-    @staticmethod
-    def searching_results(query):
-        query = f'%{query}%'
-        result = db.connection.query(CostControl).filter(
-            CostControl.description.ilike(query)).order_by(desc(CostControl.date)).all()
-        app = MDApp.get_running_app()
-        app.show_results(result)
-
-
-class AddNavigationItem(AbstractClassForDropDownMenu):
-
-    @staticmethod
-    def insert_data(description, category, cost, price):
-        db.insert_data(description, category, cost, price)
-        app = MDApp.get_running_app()
-        screen_manager = app.root.ids.bottom_nav
-        app.all_reports()
-        screen_manager.switch_tab("screen main")
-
-
-class CostControlApp(MDApp):
     def __init__(self, **kwargs):
-        super(CostControlApp, self).__init__(**kwargs)
+        super().__init__(**kwargs)
+        self.app = MDApp.get_running_app()
 
-    def all_reports(self):
-        result = db.connection.query(CostControl).order_by(desc(CostControl.date)).all()
+    def searching_results(self, query):
+        query = f'%{query}%'
+        result = db.list(query)
         self.show_results(result)
 
-    @staticmethod
-    def show_results(query):
-        app = MDApp.get_running_app()
-        result_list_widget = app.root.ids.show_result
+    def all_reports(self):
+        result = db.list()
+        self.show_results(result)
+
+    def show_results(self, query):
+        result_list_widget = self.app.root.ids.show_result
         result_list_widget.clear_widgets()
         if query:
             for report in query:
@@ -159,10 +142,27 @@ class CostControlApp(MDApp):
         else:
             result_list_widget.add_widget(IfNoRecords())
 
+
+class AddNavigationItem(AbstractClassForDropDownMenu):
+
+    @staticmethod
+    def insert_data(description, category, cost, price):
+        db.insert_data(description, category, cost, price)
+        app = MDApp.get_running_app()
+        screen_manager = app.root.ids.bottom_nav
+        screen_manager.switch_tab("screen main")
+
+
+class CostControlApp(MDApp):
+
+    def __init__(self, **kwargs):
+        super(CostControlApp, self).__init__(**kwargs)
+
     def build(self):
         return MainWindow()
 
 
 if __name__ == '__main__':
     db = DataBase()
+    print("подумать над методом dismiss")
     CostControlApp().run()

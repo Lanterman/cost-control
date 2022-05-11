@@ -5,10 +5,6 @@
 
     MDToolbar:
         title: "Cost Control"
-        MDIconButton:
-            icon: 'refresh'
-            pos_hint: {"center_x": 0.5, "center_y": .5}
-            on_release: app.all_reports()
 
     MDBoxLayout:
         orientation: 'horizontal'
@@ -28,7 +24,7 @@
                 name: "screen main"
                 icon: "calendar-text-outline"
                 on_tab_press:
-                    app.all_reports()
+                    app.root.ids.main_nav.all_reports()
                 MainNavigationItem:
                     id: main_nav
                     md_bg_color: [0.85, 0.92, 0.98, 1]
@@ -107,7 +103,6 @@
         MDTextField:
             id: changed_description
             pos_hint: {"center_y": 0.5}
-            required: True
     MDBoxLayout:
         MDLabel:
             text: "Category"
