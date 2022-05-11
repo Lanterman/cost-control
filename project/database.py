@@ -40,11 +40,21 @@ class DataBase:
         self.connection.add(cost)
         self.connection.commit()
 
+    def apply_change(self, instance, description, category, cost, price):
+        instance.description = description
+        instance.category = category
+        instance.costs = cost
+        instance.price = price
+        instance.date = str(datetime.now())[:19]
+        self.connection.add(instance)
+        self.connection.commit()
+
 
 class ValidateData:
     """Валидатор полей"""
 
-    def validate_data(self, category, costs, price):
+    @staticmethod
+    def validate_data(category, costs, price):
         """Валидатор полей"""
         information = 'P.S. Десятичные писать через точку!'
         if category not in ('---------', 'продукты', 'транспорт', 'связь', 'работа', 'хобби', 'дом', 'копилка'):
@@ -66,7 +76,8 @@ class ValidateData:
             else:
                 return True
 
-    def control_of_filling_the_price(self, cost, price):
+    @staticmethod
+    def control_of_filling_the_price(cost, price):
         """Конроль знака в зависимости от действия"""
         if cost == 'Расход' and price[0] != '-':
             price = '-' + price

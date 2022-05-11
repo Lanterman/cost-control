@@ -19,12 +19,18 @@
             text_color_active: 1, 0, 0, 1
 
             MDBottomNavigationItem:
+                name: "screen add"
+                icon: "plus-box"
+                AddNavigationItem:
+
+            MDBottomNavigationItem:
                 id: main
                 name: "screen main"
                 icon: "calendar-text-outline"
                 on_tab_press:
                     app.all_reports()
-                MDBoxLayout:
+                MainNavigationItem:
+                    id: main_nav
                     md_bg_color: [0.85, 0.92, 0.98, 1]
                     orientation: 'vertical'
                     MDBoxLayout:
@@ -39,7 +45,7 @@
                             icon: "magnify"
                             pos_hint: {"center_x": 0.5, "center_y": 0.43}
                             on_release:
-                                app.searching_results(root.ids.search_id.text)
+                                root.ids.main_nav.searching_results(root.ids.search_id.text)
                     ScrollView:
                         size_hint: 0.99, 8
                         bar_color: [0.24, 0.25, 0.30, 1]
@@ -48,34 +54,6 @@
                         scroll_type: ["bars", "content"]
                         MDList:
                             id: show_result
-
-            MDBottomNavigationItem:
-                name: "screen add"
-                icon: "plus-box"
-                MDBoxLayout:
-                    orientation: "vertical"
-                    MDTextField:
-                        id: add_description
-                        hint_text: "Введите описание"
-                        multiline: True
-                    MDTextField:
-                        id: add_category
-                        hint_text: "Введите категорию"
-                    MDTextField:
-                        id: add_cost
-                        hint_text: "Введите cost"
-                    MDTextField:
-                        id: add_price
-                        hint_text: "Введите price"
-                    Widget:
-                    MDFloatingActionButton:
-                        icon: "plus"
-                        pos_hint: {'right': 0.95}
-                        on_release:
-                            app.insert_data(root.ids.add_description.text,
-                            root.ids.add_category.text,
-                            root.ids.add_cost.text,
-                            root.ids.add_price.text)
 
             MDBottomNavigationItem:
                 name: "screen cost"
@@ -91,7 +69,7 @@
                     text: "In developing"
                     halign: 'center'
 
-<MainNavigationItem>:
+<RecordWidget>:
     text_color: [0.67, 0.23, 0.23, 1]
     theme_text_color: "Custom"
     MDIcon:
@@ -169,3 +147,34 @@
     max_height: 230
     radius: [24, 24, 24, 24]
     background_color: [.66, 0.88, 0.92, 1]
+
+<AddNavigationItem>:
+    orientation: "vertical"
+    MDTextField:
+        id: add_description
+        hint_text: "Введите описание"
+        multiline: True
+    MDDropDownItem:
+        id: drop_item_category
+        pos_hint: {"center_y": 0.55}
+        text: "---------"
+        on_release:
+            root.drop_down_category_menu()
+    MDDropDownItem:
+        id: drop_item_costs
+        pos_hint: {"center_y": 0.55}
+        text: "Расход"
+        on_release:
+            root.drop_down_costs_menu()
+    MDTextField:
+        id: add_price
+        hint_text: "Введите цену"
+    Widget:
+    MDFloatingActionButton:
+        icon: "plus"
+        pos_hint: {'right': 0.95}
+        on_release:
+            root.insert_data(root.ids.add_description.text,
+            root.ids.drop_item_category.ids.label_item.text,
+            root.ids.drop_item_costs.ids.label_item.text,
+            root.ids.add_price.text)

@@ -1,5 +1,3 @@
-from datetime import datetime
-
 from kivy.core.window import Window
 from kivymd.uix.dialog import MDDialog
 from kivymd.uix.label import MDLabel
@@ -31,18 +29,7 @@ class DropDownMenuReportsBox(MDDropdownMenu):
     pass
 
 
-class BoxItemEditReport(MDBoxLayout):
-    def __init__(self, db, report_id, **kwargs):
-        super().__init__(**kwargs)
-        self.db = db
-        self.report = self.db.connection.query(CostControl).get(report_id)
-        self.default_values()
-
-    def default_values(self):
-        self.ids.changed_description.set_text(instance=None, text=self.report.description)
-        self.ids.drop_item_category.set_item(self.report.category)
-        self.ids.drop_item_costs.set_item(self.report.costs)
-        self.ids.changed_price.set_text(instance=None, text=str(self.report.price))
+class AbstractClassForDropDownMenu(MDBoxLayout):
 
     def drop_down_category_menu(self):
         category = ('---------', 'продукты', 'транспорт', 'связь', 'работа', 'хобби', 'дом', 'копилка')
@@ -65,25 +52,30 @@ class BoxItemEditReport(MDBoxLayout):
             self.ids.drop_item_category.set_item(item)
         self.menu.dismiss()
 
+
+class BoxItemEditReport(AbstractClassForDropDownMenu):
+    def __init__(self, report_id, **kwargs):
+        super().__init__(**kwargs)
+        self.report = db.connection.query(CostControl).get(report_id)
+        self.default_values()
+
+    def default_values(self):
+        self.ids.changed_description.set_text(instance=None, text=self.report.description)
+        self.ids.drop_item_category.set_item(self.report.category)
+        self.ids.drop_item_costs.set_item(self.report.costs)
+        self.ids.changed_price.set_text(instance=None, text=str(self.report.price))
+
     def apply_change(self, description, category, cost, price):
-        self.report.description = description
-        self.report.category = category
-        self.report.costs = cost
-        self.report.price = price
-        self.report.date = str(datetime.now())[:19]
-        self.db.connection.add(self.report)
-        self.db.connection.commit()
+        db.apply_change(self.report, description, category, cost, price)
         Snackbar(text=25 * " " + f"Record {self.report.id} updated!", font_size=18).open()
         app = MDApp.get_running_app()
         app.all_reports()
 
 
-class MainNavigationItem(ThreeLineAvatarIconListItem):
-    def __init__(self, report_id, db, **kwargs):
-        super(MainNavigationItem, self).__init__(**kwargs)
-        self.db = db
-        self.report_id = report_id
-        self.report = self.db.connection.query(CostControl).get(self.report_id)
+class RecordWidget(ThreeLineAvatarIconListItem):
+    def __init__(self, instance, **kwargs):
+        super(RecordWidget, self).__init__(**kwargs)
+        self.instance = instance
 
     def show_menu(self):
         items = [{"text": "Show", "viewclass": "OneLineListItem", "on_release": lambda: self.show_report()},
@@ -97,11 +89,11 @@ class MainNavigationItem(ThreeLineAvatarIconListItem):
         self.menu.dismiss()
         dialog_show_report = MDDialog(
             title=12 * " " + 'All information',
-            text=f"Description:       {self.report.description}\n\n"
-                 f"Category:           {self.report.category}\n\n"
-                 f"Cost:                   {self.report.costs}\n\n"
-                 f"Price:                  {self.report.price} BYN\n\n"
-                 f"Date:                   {self.report.date}"
+            text=f"Description:       {self.instance.description}\n\n"
+                 f"Category:           {self.instance.category}\n\n"
+                 f"Cost:                   {self.instance.costs}\n\n"
+                 f"Price:                  {self.instance.price} BYN\n\n"
+                 f"Date:                   {self.instance.date}"
         )
         dialog_show_report.open()
 
@@ -110,33 +102,49 @@ class MainNavigationItem(ThreeLineAvatarIconListItem):
         dialog_edit_report = MDDialog(
             title=18 * " " + "Edit report",
             type="custom",
-            content_cls=BoxItemEditReport(db=self.db, report_id=self.report.id),
+            content_cls=BoxItemEditReport(report_id=self.instance.id),
         )
         dialog_edit_report.open()
 
     def delete_report(self):
-        self.db.connection.query(CostControl).filter_by(id=self.report_id).delete()
+        db.connection.query(CostControl).filter_by(id=self.instance.id).delete()
         self.parent.remove_widget(self)
         self.menu.dismiss()
-        # self.db.connection.commit()
+        db.connection.commit()
+
+
+class MainNavigationItem(MDBoxLayout):
+
+    @staticmethod
+    def searching_results(query):
+        query = f'%{query}%'
+        result = db.connection.query(CostControl).filter(
+            CostControl.description.ilike(query)).order_by(desc(CostControl.date)).all()
+        app = MDApp.get_running_app()
+        app.show_results(result)
+
+
+class AddNavigationItem(AbstractClassForDropDownMenu):
+
+    @staticmethod
+    def insert_data(description, category, cost, price):
+        db.insert_data(description, category, cost, price)
+        app = MDApp.get_running_app()
+        screen_manager = app.root.ids.bottom_nav
+        app.all_reports()
+        screen_manager.switch_tab("screen main")
 
 
 class CostControlApp(MDApp):
-    def __init__(self, db, **kwargs):
+    def __init__(self, **kwargs):
         super(CostControlApp, self).__init__(**kwargs)
-        self.db = db
 
     def all_reports(self):
-        result = self.db.connection.query(CostControl).order_by(desc(CostControl.date)).all()
+        result = db.connection.query(CostControl).order_by(desc(CostControl.date)).all()
         self.show_results(result)
 
-    def searching_results(self, query):
-        query = f'%{query}%'
-        result = self.db.connection.query(CostControl).filter(
-            CostControl.description.ilike(query)).order_by(desc(CostControl.date)).all()
-        self.show_results(result)
-
-    def show_results(self, query):
+    @staticmethod
+    def show_results(query):
         app = MDApp.get_running_app()
         result_list_widget = app.root.ids.show_result
         result_list_widget.clear_widgets()
@@ -144,19 +152,12 @@ class CostControlApp(MDApp):
             for report in query:
                 space = 27 - len(report.costs) - len(str(report.price))
                 result_list_widget.add_widget(
-                    MainNavigationItem(text=f'{report.description}',
-                                       secondary_text=report.costs + space * " " + str(report.price) + ' BYN',
-                                       report_id=report.id, db=db, tertiary_text=f'{report.date}')
+                    RecordWidget(text=f'{report.description}',
+                                 secondary_text=report.costs + space * " " + str(report.price) + ' BYN',
+                                 instance=report, tertiary_text=f'{report.date}')
                 )
         else:
             result_list_widget.add_widget(IfNoRecords())
-
-    def insert_data(self, description, category, cost, price):
-        self.db.insert_data(description, category, cost, price)
-        app = MDApp.get_running_app()
-        screen_manager = app.root.ids.bottom_nav
-        self.all_reports()
-        screen_manager.switch_tab("screen main")
 
     def build(self):
         return MainWindow()
@@ -164,4 +165,4 @@ class CostControlApp(MDApp):
 
 if __name__ == '__main__':
     db = DataBase()
-    CostControlApp(db).run()
+    CostControlApp().run()
