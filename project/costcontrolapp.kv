@@ -147,20 +147,25 @@
 
 <AddNavigationItem>:
     orientation: "vertical"
+    padding: 10, 10, 15, 5
+    spacing: 20
     MDTextField:
         id: add_description
         hint_text: "Введите описание"
         multiline: True
+        font_size: 18
+        max_text_length: 50
+        max_height: 97
     MDDropDownItem:
         id: drop_item_category
-        pos_hint: {"center_y": 0.55}
         text: "---------"
+        font_size: 18
         on_release:
             root.drop_down_category_menu()
     MDDropDownItem:
         id: drop_item_costs
-        pos_hint: {"center_y": 0.55}
         text: "Расход"
+        font_size: 18
         on_release:
             root.drop_down_costs_menu()
     MDTextField:
@@ -168,6 +173,9 @@
         hint_text: "Введите цену"
         required: True
         text: "0"
+        font_size: 18
+        helper_text: "Десятичные числа писать через точку!"
+        helper_text_mode: "on_focus"
     Widget:
     MDFloatingActionButton:
         icon: "plus"
@@ -177,3 +185,5 @@
             root.ids.drop_item_category.ids.label_item.text,
             root.ids.drop_item_costs.ids.label_item.text,
             root.ids.add_price.text)
+    Widget:
+        size_hint_y: 0.1

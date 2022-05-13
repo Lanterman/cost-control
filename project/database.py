@@ -14,8 +14,8 @@ class CostControl(Base):
 
     id = Column(Integer, primary_key=True)
     description = Column(String(50), nullable=False)
-    category = Column(String(50))
-    costs = Column(String(50))
+    category = Column(String())
+    costs = Column(String())
     price = Column(Float, nullable=False)
     date = Column(String)
 
@@ -86,6 +86,9 @@ class ValidateData:
         """Валидация поля description"""
         if not description:
             self.snackbar.text = "Поле description не может быть пустым!"
+            self.snackbar.open()
+        elif len(description) > 50:
+            self.snackbar.text = "Слишком много символов в description!"
             self.snackbar.open()
         else:
             return True

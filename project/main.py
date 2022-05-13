@@ -3,7 +3,6 @@ from kivymd.uix.dialog import MDDialog
 from kivymd.uix.label import MDLabel
 from kivymd.uix.menu import MDDropdownMenu
 from kivymd.uix.snackbar import Snackbar
-
 from project.database import DataBase, ValidateData
 from kivymd.app import MDApp
 from kivymd.uix.boxlayout import MDBoxLayout
