@@ -103,6 +103,7 @@
         MDTextField:
             id: changed_description
             pos_hint: {"center_y": 0.5}
+            required: True
     MDBoxLayout:
         MDLabel:
             text: "Category"
@@ -125,6 +126,7 @@
         MDTextField:
             id: changed_price
             pos_hint: {"center_y": 0.5}
+            required: True
     Widget:
     MDRaisedButton:
         text: "Apply"
@@ -164,6 +166,8 @@
     MDTextField:
         id: add_price
         hint_text: "Введите цену"
+        required: True
+        text: "0"
     Widget:
     MDFloatingActionButton:
         icon: "plus"

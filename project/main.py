@@ -4,7 +4,7 @@ from kivymd.uix.label import MDLabel
 from kivymd.uix.menu import MDDropdownMenu
 from kivymd.uix.snackbar import Snackbar
 
-from project.database import DataBase
+from project.database import DataBase, ValidateData
 from kivymd.app import MDApp
 from kivymd.uix.boxlayout import MDBoxLayout
 from kivymd.uix.list import ThreeLineAvatarIconListItem
@@ -66,10 +66,11 @@ class BoxItemEditReport(AbstractClassForDropDownMenu):
         self.ids.changed_price.set_text(instance=None, text=str(self.report.price))
 
     def apply_change(self, description, category, cost, price):
-        db.update(self.report, description, category, cost, price)
-        Snackbar(text=25 * " " + f"Record {self.report.id} updated!", font_size=18).open()
-        app = MDApp.get_running_app()
-        app.root.ids.main_nav.all_reports()
+        if ValidateData().validate_data(description, price):
+            db.update(self.report, description, category, cost, price)
+            Snackbar(text=25 * " " + f"Record {self.report.id} updated!", font_size=18).open()
+            app = MDApp.get_running_app()
+            app.root.ids.main_nav.all_reports()
 
 
 class RecordWidget(ThreeLineAvatarIconListItem):
@@ -145,18 +146,22 @@ class MainNavigationItem(MDBoxLayout):
 
 class AddNavigationItem(AbstractClassForDropDownMenu):
 
-    @staticmethod
-    def insert_data(description, category, cost, price):
-        db.insert_data(description, category, cost, price)
-        app = MDApp.get_running_app()
-        screen_manager = app.root.ids.bottom_nav
-        screen_manager.switch_tab("screen main")
+    def insert_data(self, description, category, cost, price):
+        if ValidateData().validate_data(description, price):
+            db.insert_data(description, category, cost, price)
+            app = MDApp.get_running_app()
+            screen_manager = app.root.ids.bottom_nav
+            self.clearing_text_widgets()
+            screen_manager.switch_tab("screen main")
+
+    def clearing_text_widgets(self):
+        self.ids.add_description.set_text(instance=None, text="")
+        self.ids.drop_item_category.set_item("---------")
+        self.ids.drop_item_costs.set_item("Расход")
+        self.ids.add_price.set_text(instance=None, text="0")
 
 
 class CostControlApp(MDApp):
-
-    def __init__(self, **kwargs):
-        super(CostControlApp, self).__init__(**kwargs)
 
     def build(self):
         return MainWindow()
