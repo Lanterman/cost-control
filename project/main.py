@@ -1,4 +1,5 @@
 from kivy.core.window import Window
+from kivymd.uix.button import MDFlatButton
 from kivymd.uix.dialog import MDDialog
 from kivymd.uix.label import MDLabel
 from kivymd.uix.menu import MDDropdownMenu
@@ -160,7 +161,35 @@ class AddNavigationItem(AbstractClassForDropDownMenu):
         self.ids.add_price.set_text(instance=None, text="0")
 
 
+class ButtonToDeleteAllReports(MDFlatButton):
+    def __init__(self, instance, **kwargs):
+        super().__init__(**kwargs)
+        self.font_size = 16
+        self.instance = instance
+        self.app = MDApp.get_running_app()
+
+    def on_press(self):
+        if self.text == "OK":
+            db.delete_all_reports()
+            screen_manager = self.app.root.ids.bottom_nav
+            screen_manager.switch_tab("screen main")
+        self.instance.dismiss()
+
+
 class CostControlApp(MDApp):
+
+    @staticmethod
+    def clear_db():
+        menu = MDDialog(title=9 * " " + "Удалить все записи?",
+                        text="Это действие безвозвартно удалит все записи!",
+                        radius=[20, 20, 20, 20])
+        menu.buttons = [
+            ButtonToDeleteAllReports(text="OK", instance=menu),
+            ButtonToDeleteAllReports(text="Cancel", instance=menu)
+        ]
+        menu.create_buttons()
+        menu.ids.root_button_box.height = 40
+        menu.open()
 
     def build(self):
         return MainWindow()

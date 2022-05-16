@@ -72,6 +72,11 @@ class DataBase:
         self.connection.query(CostControl).filter_by(id=report_id).delete()
         self.connection.commit()
 
+    def delete_all_reports(self):
+        """Удаление всех записей из BD"""
+        self.connection.query(CostControl).delete()
+        # self.connection.commit()
+
 
 class ValidateData:
     """Валидатор полей"""
@@ -80,7 +85,8 @@ class ValidateData:
         self.snackbar = Snackbar(font_size=14, snackbar_y=660, snackbar_animation_dir="Top",
                                  bg_color=(.85, .14, .23, 1))
         self.snackbar.buttons = [
-            MDIconButton(icon="close", pos_hint={"center_y": .5}, on_release=self.snackbar.dismiss)]
+            MDIconButton(icon="close", pos_hint={"center_y": .5}, on_release=self.snackbar.dismiss)
+        ]
 
     def validate_description(self, description):
         """Валидация поля description"""

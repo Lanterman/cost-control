@@ -5,6 +5,11 @@
 
     MDToolbar:
         title: "Cost Control"
+        MDIconButton:
+            icon: "database-remove-outline"
+            pos_hint: {"center_y": 0.5, "center_x": 1}
+            on_release:
+                app.clear_db()
 
     MDBoxLayout:
         orientation: 'horizontal'
@@ -54,13 +59,6 @@
             MDBottomNavigationItem:
                 name: "screen cost"
                 icon: "currency-usd"
-                MDLabel:
-                    text: "In developing"
-                    halign: 'center'
-
-            MDBottomNavigationItem:
-                name: "screen clear"
-                icon: "database-remove-outline"
                 MDLabel:
                     text: "In developing"
                     halign: 'center'
