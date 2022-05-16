@@ -1,5 +1,5 @@
 from kivy.core.window import Window
-from kivymd.uix.button import MDFlatButton
+from kivymd.uix.button import MDFlatButton, MDRaisedButton
 from kivymd.uix.dialog import MDDialog
 from kivymd.uix.label import MDLabel
 from kivymd.uix.menu import MDDropdownMenu
@@ -14,6 +14,49 @@ Window.size = (370, 720)
 
 class MainWindow(MDBoxLayout):
     pass
+
+
+class ButtonToApplyChangesToReport(MDRaisedButton):
+    def __init__(self, obj_dialog, box_item_edit=None, obj_report=None, **kwargs):
+        super().__init__(**kwargs)
+        self.font_size = 16
+
+        self.app = MDApp.get_running_app()
+        self.obj_dialog = obj_dialog
+        self.box_item_edit = box_item_edit
+        self.obj_report = obj_report
+
+    def apply_change(self, description, category, cost, price):
+        if ValidateData().validate_data(description, price):
+            db.update(self.obj_report, description, category, cost, price)
+            Snackbar(text=25 * " " + f"Record {self.obj_report.id} updated!", font_size=18,
+                     snackbar_y=660, snackbar_animation_dir="Top").open()
+
+    def on_press(self):
+        if self.obj_report:
+            self.apply_change(
+                self.box_item_edit.ids.changed_description.text,
+                self.box_item_edit.ids.drop_item_category.ids.label_item.text,
+                self.box_item_edit.ids.drop_item_costs.ids.label_item.text,
+                self.box_item_edit.ids.changed_price.text
+            )
+            self.app.root.ids.main_nav.all_reports()
+        self.obj_dialog.dismiss()
+
+
+class ButtonToDeleteAllReports(MDFlatButton):
+    def __init__(self, instance, **kwargs):
+        super().__init__(**kwargs)
+        self.font_size = 16
+        self.instance = instance
+        self.app = MDApp.get_running_app()
+
+    def on_press(self):
+        if self.text == "OK":
+            db.delete_all_reports()
+            screen_manager = self.app.root.ids.bottom_nav
+            screen_manager.switch_tab("screen main")
+        self.instance.dismiss()
 
 
 class DropdownMenuFunctionsOfReport(MDDropdownMenu):
@@ -65,19 +108,16 @@ class BoxItemEditReport(AbstractClassForDropDownMenu):
         self.ids.drop_item_costs.set_item(self.report.costs)
         self.ids.changed_price.set_text(instance=None, text=str(self.report.price))
 
-    def apply_change(self, description, category, cost, price):
-        if ValidateData().validate_data(description, price):
-            db.update(self.report, description, category, cost, price)
-            Snackbar(text=25 * " " + f"Record {self.report.id} updated!", font_size=18).open()
-            app = MDApp.get_running_app()
-            app.root.ids.main_nav.all_reports()
-
 
 class RecordWidget(ThreeLineAvatarIconListItem):
 
     def __init__(self, instance, **kwargs):
         super(RecordWidget, self).__init__(**kwargs)
         self.instance = instance
+        if self.instance.costs == "Расход":
+            self.ids.md_icon.icon = "minus"
+        else:
+            self.ids.md_icon.icon = "plus"
 
     def show_menu(self):
         items = [{"text": "Show", "viewclass": "OneLineListItem", "on_release": lambda: self.show_report()},
@@ -101,11 +141,18 @@ class RecordWidget(ThreeLineAvatarIconListItem):
 
     def edit_report(self):
         self.menu.dismiss()
-        dialog_edit_report = MDDialog(
-            title=18 * " " + "Edit report",
-            type="custom",
-            content_cls=BoxItemEditReport(report_id=self.instance.id),
-        )
+        box_item_edit = BoxItemEditReport(report_id=self.instance.id)
+        dialog_edit_report = MDDialog(title=18 * " " + "Edit report",
+                                      type="custom",
+                                      content_cls=box_item_edit)
+        dialog_edit_report.buttons = [
+            ButtonToApplyChangesToReport(text="Apply", obj_dialog=dialog_edit_report, box_item_edit=box_item_edit,
+                                         obj_report=self.instance),
+            ButtonToApplyChangesToReport(text="Cancel", obj_dialog=dialog_edit_report,
+                                         text_color=(0.1, 0.1, 1, 1), md_bg_color=(0.86, 0.81, 0.81, 1))
+        ]
+        dialog_edit_report.create_buttons()
+        dialog_edit_report.ids.root_button_box.height = 50
         dialog_edit_report.open()
 
     def delete_report(self):
@@ -161,35 +208,24 @@ class AddNavigationItem(AbstractClassForDropDownMenu):
         self.ids.add_price.set_text(instance=None, text="0")
 
 
-class ButtonToDeleteAllReports(MDFlatButton):
-    def __init__(self, instance, **kwargs):
-        super().__init__(**kwargs)
-        self.font_size = 16
-        self.instance = instance
-        self.app = MDApp.get_running_app()
-
-    def on_press(self):
-        if self.text == "OK":
-            db.delete_all_reports()
-            screen_manager = self.app.root.ids.bottom_nav
-            screen_manager.switch_tab("screen main")
-        self.instance.dismiss()
+class CostNavigationItem(MDBoxLayout):
+    pass
 
 
 class CostControlApp(MDApp):
 
     @staticmethod
     def clear_db():
-        menu = MDDialog(title=9 * " " + "Удалить все записи?",
-                        text="Это действие безвозвартно удалит все записи!",
-                        radius=[20, 20, 20, 20])
-        menu.buttons = [
-            ButtonToDeleteAllReports(text="OK", instance=menu),
-            ButtonToDeleteAllReports(text="Cancel", instance=menu)
+        delete_dialog = MDDialog(title=9 * " " + "Удалить все записи?",
+                                 text="Это действие безвозвартно удалит все записи!",
+                                 radius=[20, 20, 20, 20])
+        delete_dialog.buttons = [
+            ButtonToDeleteAllReports(text="OK", instance=delete_dialog),
+            ButtonToDeleteAllReports(text="Cancel", instance=delete_dialog)
         ]
-        menu.create_buttons()
-        menu.ids.root_button_box.height = 40
-        menu.open()
+        delete_dialog.create_buttons()
+        delete_dialog.ids.root_button_box.height = 40
+        delete_dialog.open()
 
     def build(self):
         return MainWindow()
@@ -197,5 +233,4 @@ class CostControlApp(MDApp):
 
 if __name__ == '__main__':
     db = DataBase()
-    print("подумать над методом dismiss")
     CostControlApp().run()

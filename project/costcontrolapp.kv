@@ -59,16 +59,36 @@
             MDBottomNavigationItem:
                 name: "screen cost"
                 icon: "currency-usd"
-                MDLabel:
-                    text: "In developing"
-                    halign: 'center'
+                CostNavigationItem:
+                    orientation: "vertical"
+                    padding: 40, 20
+                    MDBoxLayout:
+                        orientation: "vertical"
+                        size_hint_y: None
+                        height: "100dp"
+                        md_bg_color: [0.80, 0.85, 0.75, 1]
+                        MDLabel:
+                            text: "Осталось:"
+                            halign: "center"
+                        MDLabel:
+                            text: "Заработано:"
+                        MDLabel:
+                            text: "Потрачено:"
+                    MDRaisedButton:
+                        text: "gistogramma"
+                        pos_hint: {"center_x": 0.5}
+                    MDLabel:
+                        text: "qwe"
+                    Widget:
+
+
 
 <RecordWidget>:
     text_color: [0.67, 0.23, 0.23, 1]
     theme_text_color: "Custom"
     MDIcon:
+        id: md_icon
         pos_hint: {"center_x": 0.57, "center_y": 0.5}
-        icon: "language-python"
     IconRightWidget:
         id: button
         icon: "dots-vertical"
@@ -94,7 +114,7 @@
     orientation: "vertical"
     spacing: "12dp"
     size_hint_y: None
-    height: "300dp"
+    height: "200dp"
     MDBoxLayout:
         MDLabel:
             text: "Description"
@@ -126,16 +146,6 @@
             pos_hint: {"center_y": 0.5}
             required: True
     Widget:
-    MDRaisedButton:
-        text: "Apply"
-        pos_hint: {'right': 0.95}
-        on_release:
-            root.apply_change(root.ids.changed_description.text,
-            root.ids.drop_item_category.ids.label_item.text,
-            root.ids.drop_item_costs.ids.label_item.text,
-            root.ids.changed_price.text)
-    Widget:
-        size_hint: .5, 0.1
 
 <DropDownMenuReportsBox>:
     width_mult: 1.9
