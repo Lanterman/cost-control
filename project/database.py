@@ -10,6 +10,7 @@ Base = declarative_base()
 
 class CostControl(Base):
     """Таблица для DB"""
+
     __tablename__ = 'CostControl'
 
     id = Column(Integer, primary_key=True)
@@ -28,6 +29,7 @@ class CostControl(Base):
 
 class DataBase:
     """Создание/вызов базы данных"""
+
     def __init__(self):
         engine = create_engine('postgresql+psycopg2://postgres:karmavdele@localhost/cost_control')
         Base.metadata.create_all(engine)
@@ -35,16 +37,20 @@ class DataBase:
         self.connection = session()
 
     def cost_data(self):
+        """Поиск цены и тип каждой записи для расчетов"""
+
         reports = self.connection.query(CostControl.costs, CostControl.price).all()
         return reports
 
     def retrieve(self, report_id):
         """Поиск записи в BD"""
+
         report = self.connection.query(CostControl).get(report_id)
         return report
 
     def list(self, query=None):
         """Поиск записей в BD в зависимости от атрибута query"""
+
         if query:
             reports = self.connection.query(CostControl).filter(
                 CostControl.description.ilike(query)).order_by(desc(CostControl.date)).all()
@@ -54,6 +60,7 @@ class DataBase:
 
     def insert_data(self, description, category, cost, price):
         """Добавление записей в базу"""
+
         category, price = ValidateData.control_of_filling_the_price_and_category(category, cost, price)
         cost = CostControl(description=description, category=category, costs=cost, price=price,
                            date=str(datetime.now())[:19])
@@ -62,6 +69,7 @@ class DataBase:
 
     def update(self, instance, description, category, cost, price):
         """Обновление записи"""
+
         category, price = ValidateData.control_of_filling_the_price_and_category(category, cost, price)
         instance.description = description
         instance.category = category
@@ -73,11 +81,13 @@ class DataBase:
 
     def delete(self, report_id):
         """Удаление записи из BD"""
+
         self.connection.query(CostControl).filter_by(id=report_id).delete()
         self.connection.commit()
 
     def delete_all_reports(self):
         """Удаление всех записей из BD"""
+
         self.connection.query(CostControl).delete()
         # self.connection.commit()
 
@@ -94,6 +104,7 @@ class ValidateData:
 
     def validate_description(self, description):
         """Валидация поля description"""
+
         if not description:
             self.snackbar.text = "Поле description не может быть пустым!"
             self.snackbar.open()
@@ -105,6 +116,7 @@ class ValidateData:
 
     def validate_price(self, price):
         """Валидация поля price"""
+
         if not price:
             self.snackbar.text = "Поле price не может быть пустым!"
             self.snackbar.open()
@@ -119,6 +131,7 @@ class ValidateData:
 
     def validate_data(self, description, price):
         """Валидатор полей"""
+
         if self.validate_description(description):
             if self.validate_price(price):
                 return True
@@ -126,6 +139,7 @@ class ValidateData:
     @staticmethod
     def control_of_filling_the_price_and_category(category, cost, price):
         """Конроль знака в зависимости от действия"""
+
         if cost == 'Доход':
             category = '---------'
         if cost == 'Расход' and price[0] != '-':
