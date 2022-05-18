@@ -13,26 +13,30 @@ Window.size = (370, 720)
 
 
 class MainWindow(MDBoxLayout):
-    pass
+    """Основное окно"""
 
 
 class DropdownMenuFunctionsOfReport(MDDropdownMenu):
-    pass
+    """Виджет меню кнопок для каждой записи"""
 
 
 class DropDownMenuReportsBox(MDDropdownMenu):
-    pass
+    """Виджет меню выбора значения для поля"""
 
 
 class IfNoRecords(MDLabel):
-    pass
+    """Установить метку, если нет записей"""
 
 
 class CostDataLabel(MDLabel):
+    """Метка вкладки расчетов"""
+
     font_size = 18
 
 
 class ButtonToApplyChangesToReport(MDRaisedButton):
+    """Кнопки модального окна изменения записи"""
+
     def __init__(self, obj_dialog, box_item_edit=None, obj_report=None, **kwargs):
         super().__init__(**kwargs)
         self.font_size = 16
@@ -43,12 +47,16 @@ class ButtonToApplyChangesToReport(MDRaisedButton):
         self.obj_report = obj_report
 
     def apply_change(self, description, category, cost, price):
+        """Обновить запись"""
+
         if ValidateData().validate_data(description, price):
             db.update(self.obj_report, description, category, cost, price)
             Snackbar(text=25 * " " + f"Record {self.obj_report.id} updated!", font_size=18,
                      snackbar_y=660, snackbar_animation_dir="Top").open()
 
     def on_press(self):
+        """Действие при нажатии на кнопку"""
+
         if self.box_item_edit:
             self.apply_change(
                 self.box_item_edit.ids.changed_description.text,
@@ -61,6 +69,8 @@ class ButtonToApplyChangesToReport(MDRaisedButton):
 
 
 class ButtonToDeleteAllReports(MDFlatButton):
+    """Кнопки модального окна удаления всех записей """
+
     def __init__(self, instance, **kwargs):
         super().__init__(**kwargs)
         self.font_size = 16
@@ -68,6 +78,8 @@ class ButtonToDeleteAllReports(MDFlatButton):
         self.app = MDApp.get_running_app()
 
     def on_press(self):
+        """Действие при нажатии на кнопку"""
+
         if self.text == "OK":
             db.delete_all_reports()
             screen_manager = self.app.root.ids.bottom_nav
@@ -76,8 +88,11 @@ class ButtonToDeleteAllReports(MDFlatButton):
 
 
 class AbstractClassForDropDownMenu(MDBoxLayout):
+    """Абстрактный класс для полей category и costs"""
 
     def drop_down_category_menu(self):
+        """Выбор значения для категории записи"""
+
         category = ('---------', 'продукты', 'транспорт', 'связь', 'работа', 'хобби', 'дом', 'копилка')
         menu_items = [{"text": item, "viewclass": "OneLineListItem",
                        "on_release": lambda item=item: self.set_item(item)} for item in category]
@@ -85,6 +100,8 @@ class AbstractClassForDropDownMenu(MDBoxLayout):
         self.menu.open()
 
     def drop_down_costs_menu(self):
+        """Выбор значения для типа записи"""
+
         costs = ('Расход', 'Доход')
         menu_items = [{"text": item, "viewclass": "OneLineListItem",
                        "on_release": lambda item=item: self.set_item(item)} for item in costs]
@@ -92,6 +109,8 @@ class AbstractClassForDropDownMenu(MDBoxLayout):
         self.menu.open()
 
     def set_item(self, item):
+        """Установить значение для поля"""
+
         if item in ('Расход', 'Доход'):
             self.ids.drop_item_costs.set_item(item)
         else:
@@ -100,6 +119,7 @@ class AbstractClassForDropDownMenu(MDBoxLayout):
 
 
 class BoxItemEditReport(AbstractClassForDropDownMenu):
+    """Класс определяющий модальное окно обновление записи"""
 
     def __init__(self, report_id, **kwargs):
         super().__init__(**kwargs)
@@ -107,6 +127,8 @@ class BoxItemEditReport(AbstractClassForDropDownMenu):
         self.default_values()
 
     def default_values(self):
+        """Вывод значения по умолчанию"""
+
         self.ids.changed_description.set_text(instance=None, text=self.report.description)
         self.ids.drop_item_category.set_item(self.report.category)
         self.ids.drop_item_costs.set_item(self.report.costs)
@@ -114,6 +136,7 @@ class BoxItemEditReport(AbstractClassForDropDownMenu):
 
 
 class RecordWidget(ThreeLineAvatarIconListItem):
+    """Класс отвечающий за функционал записей"""
 
     def __init__(self, instance, **kwargs):
         super(RecordWidget, self).__init__(**kwargs)
@@ -124,6 +147,8 @@ class RecordWidget(ThreeLineAvatarIconListItem):
             self.ids.md_icon.icon = "plus"
 
     def show_menu(self):
+        """Меню работы с записями"""
+
         items = [{"text": "Show", "viewclass": "OneLineListItem", "on_release": lambda: self.show_report()},
                  {"text": "Edit", "viewclass": "OneLineListItem", "on_release": lambda: self.edit_report()},
                  {"text": "Remove", "viewclass": "OneLineListItem", "on_release": lambda: self.delete_report()}
@@ -132,6 +157,8 @@ class RecordWidget(ThreeLineAvatarIconListItem):
         self.menu.open()
 
     def show_report(self):
+        """Модальное окно показа полной информации записи"""
+
         self.menu.dismiss()
         dialog_show_report = MDDialog(
             title=12 * " " + 'All information',
@@ -144,6 +171,8 @@ class RecordWidget(ThreeLineAvatarIconListItem):
         dialog_show_report.open()
 
     def edit_report(self):
+        """Модальное окно обновление записи"""
+
         self.menu.dismiss()
         box_item_edit = BoxItemEditReport(report_id=self.instance.id)
         dialog_edit_report = MDDialog(title=18 * " " + "Edit report",
@@ -160,27 +189,36 @@ class RecordWidget(ThreeLineAvatarIconListItem):
         dialog_edit_report.open()
 
     def delete_report(self):
+        """Удалить запись"""
+
         db.delete(self.instance.id)
         self.parent.remove_widget(self)
         self.menu.dismiss()
 
 
 class MainNavigationItem(MDBoxLayout):
+    """Вкладка с записями"""
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.app = MDApp.get_running_app()
 
     def searching_results(self, query):
+        """Вывод записей по поиску"""
+
         query = f'%{query}%'
         result = db.list(query)
         self.show_results(result)
 
     def all_reports(self):
+        """Вывод всех записей"""
+
         result = db.list()
         self.show_results(result)
 
     def show_results(self, query):
+        """Логика вывода записей"""
+
         result_list_widget = self.app.root.ids.show_result
         result_list_widget.clear_widgets()
         if query:
@@ -198,6 +236,8 @@ class MainNavigationItem(MDBoxLayout):
 class AddNavigationItem(AbstractClassForDropDownMenu):
 
     def insert_data(self, description, category, cost, price):
+        """Добавление записи в BD"""
+
         if ValidateData().validate_data(description, price):
             db.insert_data(description, category, cost, price)
             app = MDApp.get_running_app()
@@ -206,6 +246,8 @@ class AddNavigationItem(AbstractClassForDropDownMenu):
             screen_manager.switch_tab("screen main")
 
     def clearing_text_widgets(self):
+        """Очистка текста виджетов после добавления записи"""
+
         self.ids.add_description.set_text(instance=None, text="")
         self.ids.drop_item_category.set_item("---------")
         self.ids.drop_item_costs.set_item("Расход")
@@ -215,6 +257,8 @@ class AddNavigationItem(AbstractClassForDropDownMenu):
 class CostNavigationItem(MDBoxLayout):
 
     def set_values(self):
+        """Установка текстовых значений"""
+
         reports = db.cost_data()
         profit, income, expenditure = self.calculate_price(reports)
         self.ids.set_profit.text = str(profit)
@@ -225,6 +269,7 @@ class CostNavigationItem(MDBoxLayout):
     @staticmethod
     def calculate_price(reports):
         """Расчет финансов"""
+
         profit = round(sum([price for cost, price in reports]), 2)
         income = round(sum([price for cost, price in reports if cost == 'Доход']), 2)
         expenditure = round(sum([price for cost, price in reports if cost == 'Расход']), 2)
@@ -233,6 +278,7 @@ class CostNavigationItem(MDBoxLayout):
     @staticmethod
     def description(reports, profit):
         """Дополнительная информация при расчете"""
+
         if not reports:
             text = 'Нет Записей'
         elif profit < 0:
@@ -247,11 +293,14 @@ class CostNavigationItem(MDBoxLayout):
 
     @staticmethod
     def graphic_design():
+        """Запуск гистограммы"""
+
         graphic_dialog = MDDialog()
         graphic_dialog.open()
 
 
 class CostControlApp(MDApp):
+    """Основное приложение"""
 
     @staticmethod
     def clear_db():
