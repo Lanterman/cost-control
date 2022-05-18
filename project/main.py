@@ -33,7 +33,7 @@ class ButtonToApplyChangesToReport(MDRaisedButton):
                      snackbar_y=660, snackbar_animation_dir="Top").open()
 
     def on_press(self):
-        if self.obj_report:
+        if self.box_item_edit:
             self.apply_change(
                 self.box_item_edit.ids.changed_description.text,
                 self.box_item_edit.ids.drop_item_category.ids.label_item.text,
@@ -65,6 +65,10 @@ class DropdownMenuFunctionsOfReport(MDDropdownMenu):
 
 class IfNoRecords(MDLabel):
     pass
+
+
+class CostDataLabel(MDLabel):
+    font_size = 18
 
 
 class DropDownMenuReportsBox(MDDropdownMenu):
@@ -209,7 +213,45 @@ class AddNavigationItem(AbstractClassForDropDownMenu):
 
 
 class CostNavigationItem(MDBoxLayout):
-    pass
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+    def set_values(self):
+        reports = db.cost_data()
+        profit, income, expenditure = self.calculate_price(reports)
+        self.ids.set_profit.text = str(profit)
+        self.ids.set_income.text = str(income)
+        self.ids.set_expenditure.text = str(expenditure)
+        self.ids.set_description.text = self.description(reports, profit)
+
+    @staticmethod
+    def calculate_price(reports):
+        """Расчет финансов"""
+        profit = round(sum([price for cost, price in reports]), 2)
+        income = round(sum([price for cost, price in reports if cost == 'Доход']), 2)
+        expenditure = round(sum([price for cost, price in reports if cost == 'Расход']), 2)
+        return profit, income, expenditure
+
+    @staticmethod
+    def description(reports, profit):
+        """Дополнительная информация при расчете"""
+        if not reports:
+            text = 'Нет Записей'
+        elif profit < 0:
+            text = 'Ваш доход ушел за границу нуля.\nВам срочно нужен дополнительный заработок!'
+        elif profit == 0:
+            text = 'От зарплаты до зарплаты?'
+        elif 0 < profit < 300:
+            text = 'Пока что все под контролем.\nТак держать!'
+        else:
+            text = f'Все под контролем.\nПримерно допустимая сумма затрат {profit - 300} BYN!'
+        return text
+
+    @staticmethod
+    def graphic_design():
+        graphic_dialog = MDDialog()
+        graphic_dialog.open()
 
 
 class CostControlApp(MDApp):

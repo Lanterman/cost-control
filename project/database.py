@@ -34,6 +34,10 @@ class DataBase:
         session = sessionmaker(engine)
         self.connection = session()
 
+    def cost_data(self):
+        reports = self.connection.query(CostControl.costs, CostControl.price).all()
+        return reports
+
     def retrieve(self, report_id):
         """Поиск записи в BD"""
         report = self.connection.query(CostControl).get(report_id)

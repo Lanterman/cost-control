@@ -59,29 +59,10 @@
             MDBottomNavigationItem:
                 name: "screen cost"
                 icon: "currency-usd"
+                on_tab_press:
+                    root.ids.cost_nav.set_values()
                 CostNavigationItem:
-                    orientation: "vertical"
-                    padding: 40, 20
-                    MDBoxLayout:
-                        orientation: "vertical"
-                        size_hint_y: None
-                        height: "100dp"
-                        md_bg_color: [0.80, 0.85, 0.75, 1]
-                        MDLabel:
-                            text: "Осталось:"
-                            halign: "center"
-                        MDLabel:
-                            text: "Заработано:"
-                        MDLabel:
-                            text: "Потрачено:"
-                    MDRaisedButton:
-                        text: "gistogramma"
-                        pos_hint: {"center_x": 0.5}
-                    MDLabel:
-                        text: "qwe"
-                    Widget:
-
-
+                    id: cost_nav
 
 <RecordWidget>:
     text_color: [0.67, 0.23, 0.23, 1]
@@ -195,3 +176,38 @@
             root.ids.add_price.text)
     Widget:
         size_hint_y: 0.1
+
+<CostNavigationItem>:
+    orientation: "vertical"
+    padding: 30
+    spacing: 40
+    MDBoxLayout:
+        orientation: "vertical"
+        padding: 40, 0
+        MDBoxLayout:
+            MDLabel:
+                font_size: 22
+                text: "Осталось:"
+            MDLabel:
+                id: set_profit
+                font_size: 22
+                halign: "right"
+        MDBoxLayout:
+            CostDataLabel:
+                text: "Заработано:"
+            CostDataLabel:
+                id: set_income
+                halign: "right"
+        MDBoxLayout:
+            CostDataLabel:
+                text: "Потрачено:"
+            CostDataLabel:
+                id: set_expenditure
+                halign: "right"
+    MDRaisedButton:
+        text: "Гистограмма"
+        pos_hint: {"center_x": 0.5}
+        on_release: root.graphic_design()
+    CostDataLabel:
+        id: set_description
+    Widget:
