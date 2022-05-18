@@ -16,6 +16,22 @@ class MainWindow(MDBoxLayout):
     pass
 
 
+class DropdownMenuFunctionsOfReport(MDDropdownMenu):
+    pass
+
+
+class DropDownMenuReportsBox(MDDropdownMenu):
+    pass
+
+
+class IfNoRecords(MDLabel):
+    pass
+
+
+class CostDataLabel(MDLabel):
+    font_size = 18
+
+
 class ButtonToApplyChangesToReport(MDRaisedButton):
     def __init__(self, obj_dialog, box_item_edit=None, obj_report=None, **kwargs):
         super().__init__(**kwargs)
@@ -57,22 +73,6 @@ class ButtonToDeleteAllReports(MDFlatButton):
             screen_manager = self.app.root.ids.bottom_nav
             screen_manager.switch_tab("screen main")
         self.instance.dismiss()
-
-
-class DropdownMenuFunctionsOfReport(MDDropdownMenu):
-    pass
-
-
-class IfNoRecords(MDLabel):
-    pass
-
-
-class CostDataLabel(MDLabel):
-    font_size = 18
-
-
-class DropDownMenuReportsBox(MDDropdownMenu):
-    pass
 
 
 class AbstractClassForDropDownMenu(MDBoxLayout):
@@ -213,9 +213,6 @@ class AddNavigationItem(AbstractClassForDropDownMenu):
 
 
 class CostNavigationItem(MDBoxLayout):
-
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
 
     def set_values(self):
         reports = db.cost_data()

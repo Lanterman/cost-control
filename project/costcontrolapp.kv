@@ -25,7 +25,6 @@
                 AddNavigationItem:
 
             MDBottomNavigationItem:
-                id: main
                 name: "screen main"
                 icon: "calendar-text-outline"
                 on_tab_press:
@@ -63,76 +62,6 @@
                     root.ids.cost_nav.set_values()
                 CostNavigationItem:
                     id: cost_nav
-
-<RecordWidget>:
-    text_color: [0.67, 0.23, 0.23, 1]
-    theme_text_color: "Custom"
-    MDIcon:
-        id: md_icon
-        pos_hint: {"center_x": 0.57, "center_y": 0.5}
-    IconRightWidget:
-        id: button
-        icon: "dots-vertical"
-        on_release:
-            root.show_menu()
-
-<DropdownMenuFunctionsOfReport>:
-    width_mult: 1.6
-    max_height: 147
-    radius: [24, 24, 24, 24]
-    background_color: [.66, 0.88, 0.92, 1]
-
-<IfNoRecords>:
-    halign: "center"
-    text: "No records"
-    theme_text_color: "Custom"
-    text_color: 0.89, 0.39, 0.26, 1
-
-<OneLineListItem>:
-    divider: None
-
-<BoxItemEditReport>:
-    orientation: "vertical"
-    spacing: "12dp"
-    size_hint_y: None
-    height: "200dp"
-    MDBoxLayout:
-        MDLabel:
-            text: "Description"
-        MDTextField:
-            id: changed_description
-            pos_hint: {"center_y": 0.5}
-            required: True
-    MDBoxLayout:
-        MDLabel:
-            text: "Category"
-        MDDropDownItem:
-            id: drop_item_category
-            pos_hint: {"center_y": 0.55}
-            on_release:
-                root.drop_down_category_menu()
-    MDBoxLayout:
-        MDLabel:
-            text: "Cost"
-        MDDropDownItem:
-            id: drop_item_costs
-            pos_hint: {"center_y": 0.55}
-            on_release:
-                root.drop_down_costs_menu()
-    MDBoxLayout:
-        MDLabel:
-            text: "Price"
-        MDTextField:
-            id: changed_price
-            pos_hint: {"center_y": 0.5}
-            required: True
-    Widget:
-
-<DropDownMenuReportsBox>:
-    width_mult: 1.9
-    max_height: 230
-    radius: [24, 24, 24, 24]
-    background_color: [.66, 0.88, 0.92, 1]
 
 <AddNavigationItem>:
     orientation: "vertical"
@@ -211,3 +140,73 @@
     CostDataLabel:
         id: set_description
     Widget:
+
+<RecordWidget>:
+    text_color: [0.67, 0.23, 0.23, 1]
+    theme_text_color: "Custom"
+    MDIcon:
+        id: md_icon
+        pos_hint: {"center_x": 0.57, "center_y": 0.5}
+    IconRightWidget:
+        id: button
+        icon: "dots-vertical"
+        on_release:
+            root.show_menu()
+
+<BoxItemEditReport>:
+    orientation: "vertical"
+    spacing: "12dp"
+    size_hint_y: None
+    height: "200dp"
+    MDBoxLayout:
+        MDLabel:
+            text: "Description"
+        MDTextField:
+            id: changed_description
+            pos_hint: {"center_y": 0.5}
+            required: True
+    MDBoxLayout:
+        MDLabel:
+            text: "Category"
+        MDDropDownItem:
+            id: drop_item_category
+            pos_hint: {"center_y": 0.55}
+            on_release:
+                root.drop_down_category_menu()
+    MDBoxLayout:
+        MDLabel:
+            text: "Cost"
+        MDDropDownItem:
+            id: drop_item_costs
+            pos_hint: {"center_y": 0.55}
+            on_release:
+                root.drop_down_costs_menu()
+    MDBoxLayout:
+        MDLabel:
+            text: "Price"
+        MDTextField:
+            id: changed_price
+            pos_hint: {"center_y": 0.5}
+            required: True
+    Widget:
+
+<DropdownMenuFunctionsOfReport>:
+    width_mult: 1.6
+    max_height: 147
+    radius: [24, 24, 24, 24]
+    background_color: [.66, 0.88, 0.92, 1]
+
+<DropDownMenuReportsBox>:
+    width_mult: 1.9
+    max_height: 230
+    radius: [24, 24, 24, 24]
+    background_color: [.66, 0.88, 0.92, 1]
+
+<IfNoRecords>:
+    halign: "center"
+    text: "No records"
+    theme_text_color: "Custom"
+    text_color: 0.89, 0.39, 0.26, 1
+
+<OneLineListItem>:
+    divider: None
