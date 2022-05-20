@@ -4,18 +4,20 @@
     orientation: 'vertical'
 
     MDToolbar:
-        title: "Cost Control"
+        title: app.title
         MDIconButton:
             icon: "database-remove-outline"
             pos_hint: {"center_y": 0.5, "center_x": 1}
             on_release:
                 app.clear_db()
+        Widget:
+            size_hint_x: 0.1
 
     MDBoxLayout:
         orientation: 'horizontal'
         MDBottomNavigation:
             id: bottom_nav
-            panel_color: [0.80, 0.85, 0.75, 1]
+            panel_color: [0.85, 0.92, 0.98, 1]
             text_color_normal: 0.55, 0.6, 0.6, 1
             text_color_active: 1, 0, 0, 1
 
@@ -31,10 +33,9 @@
                     app.root.ids.main_nav.all_reports()
                 MainNavigationItem:
                     id: main_nav
-                    md_bg_color: [0.85, 0.92, 0.98, 1]
                     orientation: 'vertical'
                     MDBoxLayout:
-                        md_bg_color: [0.80, 0.85, 0.75, 1]
+                        md_bg_color: [0.85, 0.92, 0.98, 1]
                         padding: 10, 5, 5, 5
                         MDTextField:
                             id: search_id
@@ -48,8 +49,6 @@
                                 root.ids.main_nav.searching_results(root.ids.search_id.text)
                     ScrollView:
                         size_hint: 0.99, 8
-                        bar_color: [0.24, 0.25, 0.30, 1]
-                        bar_inactive_color: [0.24, 0.25, 0.30, 1]
                         bar_width: 11
                         scroll_type: ["bars", "content"]
                         MDList:

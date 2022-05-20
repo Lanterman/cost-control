@@ -302,6 +302,8 @@ class CostNavigationItem(MDBoxLayout):
 class CostControlApp(MDApp):
     """Основное приложение"""
 
+    title = "Cost Control"
+
     @staticmethod
     def clear_db():
         delete_dialog = MDDialog(title=9 * " " + "Удалить все записи?",
