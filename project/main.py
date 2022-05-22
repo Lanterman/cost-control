@@ -1,4 +1,3 @@
-from kivy.core.window import Window
 from kivymd.uix.button import MDFlatButton, MDRaisedButton
 from kivymd.uix.dialog import MDDialog
 from kivymd.uix.label import MDLabel
@@ -9,7 +8,7 @@ from kivymd.app import MDApp
 from kivymd.uix.boxlayout import MDBoxLayout
 from kivymd.uix.list import ThreeLineAvatarIconListItem
 
-Window.size = (370, 720)
+db = DataBase()
 
 
 class MainWindow(MDBoxLayout):
@@ -34,6 +33,14 @@ class CostDataLabel(MDLabel):
     font_size = 18
 
 
+class FullInfoOfReportsLabel(MDLabel):
+    """Метка вкладки расчетов"""
+
+    font_size = 18
+    theme_text_color = "Custom"
+    text_color = (0.64, 0.64, 0.64, 1)
+
+
 class ButtonToApplyChangesToReport(MDRaisedButton):
     """Кнопки модального окна изменения записи"""
 
@@ -51,7 +58,7 @@ class ButtonToApplyChangesToReport(MDRaisedButton):
 
         if ValidateData().validate_data(description, price):
             db.update(self.obj_report, description, category, cost, price)
-            Snackbar(text=25 * " " + f"Record {self.obj_report.id} updated!", font_size=18,
+            Snackbar(text=25 * " " + f"Record {self.obj_report[0]} updated!", font_size=18,
                      snackbar_y=660, snackbar_animation_dir="Top").open()
 
     def on_press(self):
@@ -93,7 +100,7 @@ class AbstractClassForDropDownMenu(MDBoxLayout):
     def drop_down_category_menu(self):
         """Выбор значения для категории записи"""
 
-        category = ('---------', 'продукты', 'транспорт', 'связь', 'работа', 'хобби', 'дом', 'копилка')
+        category = ('---------', 'продукты', 'транспорт', 'медицина', 'связь', 'работа', 'хобби', 'дом', 'копилка')
         menu_items = [{"text": item, "viewclass": "OneLineListItem",
                        "on_release": lambda item=item: self.set_item(item)} for item in category]
         self.menu = DropDownMenuReportsBox(caller=self.ids.drop_item_category, items=menu_items)
@@ -129,10 +136,35 @@ class BoxItemEditReport(AbstractClassForDropDownMenu):
     def default_values(self):
         """Вывод значения по умолчанию"""
 
-        self.ids.changed_description.set_text(instance=None, text=self.report.description)
-        self.ids.drop_item_category.set_item(self.report.category)
-        self.ids.drop_item_costs.set_item(self.report.costs)
-        self.ids.changed_price.set_text(instance=None, text=str(self.report.price))
+        self.ids.changed_description.set_text(instance=None, text=self.report[1])
+        self.ids.drop_item_category.set_item(self.report[2])
+        self.ids.drop_item_costs.set_item(self.report[3])
+        self.ids.changed_price.set_text(instance=None, text=str(self.report[4]))
+
+
+class BoxItemFullInfoOfReports(MDBoxLayout):
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.reports = db.full_info_of_reports_for_cost()
+        self.info_dict = {'продукты': 0, 'транспорт': 0, 'медицина': 0, 'связь': 0, 'работа': 0,
+                          'хобби': 0, 'дом': 0, 'копилка': 0}
+        self.set_values()
+
+    def set_values(self):
+        """Установка значений"""
+
+        for report in self.reports:
+            self.info_dict[report[0]] -= report[1]
+
+        self.ids.per_product.text = str(self.info_dict["продукты"])
+        self.ids.per_transport.text = str(self.info_dict["транспорт"])
+        self.ids.per_medicine.text = str(self.info_dict["медицина"])
+        self.ids.per_phone.text = str(self.info_dict["связь"])
+        self.ids.per_work.text = str(self.info_dict["работа"])
+        self.ids.per_hobby.text = str(self.info_dict["хобби"])
+        self.ids.per_home.text = str(self.info_dict["дом"])
+        self.ids.per_moneybox.text = str(self.info_dict["копилка"])
 
 
 class RecordWidget(ThreeLineAvatarIconListItem):
@@ -141,7 +173,7 @@ class RecordWidget(ThreeLineAvatarIconListItem):
     def __init__(self, instance, **kwargs):
         super(RecordWidget, self).__init__(**kwargs)
         self.instance = instance
-        if self.instance.costs == "Расход":
+        if self.instance[3] == "Расход":
             self.ids.md_icon.icon = "minus"
         else:
             self.ids.md_icon.icon = "plus"
@@ -162,11 +194,11 @@ class RecordWidget(ThreeLineAvatarIconListItem):
         self.menu.dismiss()
         dialog_show_report = MDDialog(
             title=12 * " " + 'All information',
-            text=f"Description:       {self.instance.description}\n\n"
-                 f"Category:           {self.instance.category}\n\n"
-                 f"Cost:                   {self.instance.costs}\n\n"
-                 f"Price:                  {self.instance.price} BYN\n\n"
-                 f"Date:                   {self.instance.date}"
+            text=f"Description:       {self.instance[1]}\n\n"
+                 f"Category:           {self.instance[2]}\n\n"
+                 f"Cost:                   {self.instance[3]}\n\n"
+                 f"Price:                  {self.instance[4]} BYN\n\n"
+                 f"Date:                   {self.instance[5]}"
         )
         dialog_show_report.open()
 
@@ -174,7 +206,7 @@ class RecordWidget(ThreeLineAvatarIconListItem):
         """Модальное окно обновление записи"""
 
         self.menu.dismiss()
-        box_item_edit = BoxItemEditReport(report_id=self.instance.id)
+        box_item_edit = BoxItemEditReport(report_id=self.instance[0])
         dialog_edit_report = MDDialog(title=18 * " " + "Edit report",
                                       type="custom",
                                       content_cls=box_item_edit)
@@ -191,7 +223,7 @@ class RecordWidget(ThreeLineAvatarIconListItem):
     def delete_report(self):
         """Удалить запись"""
 
-        db.delete(self.instance.id)
+        db.delete(self.instance[0])
         self.parent.remove_widget(self)
         self.menu.dismiss()
 
@@ -223,11 +255,11 @@ class MainNavigationItem(MDBoxLayout):
         result_list_widget.clear_widgets()
         if query:
             for report in query:
-                space = 27 - len(report.costs) - len(str(report.price))
+                space = 27 - len(report[3]) - len(str(report[4]))
                 result_list_widget.add_widget(
-                    RecordWidget(text=f'{report.description}',
-                                 secondary_text=report.costs + space * " " + str(report.price) + ' BYN',
-                                 instance=report, tertiary_text=f'{report.date}')
+                    RecordWidget(text=f'{report[1]}',
+                                 secondary_text=report[3] + space * " " + str(report[4]) + ' BYN',
+                                 instance=report, tertiary_text=f'{report[5]}')
                 )
         else:
             result_list_widget.add_widget(IfNoRecords())
@@ -292,11 +324,13 @@ class CostNavigationItem(MDBoxLayout):
         return text
 
     @staticmethod
-    def graphic_design():
+    def full_info_of_reports():
         """Запуск гистограммы"""
 
-        graphic_dialog = MDDialog()
-        graphic_dialog.open()
+        dialog_full_information = MDDialog(title=2 * " " + "Full information of reports",
+                                           type="custom",
+                                           content_cls=BoxItemFullInfoOfReports())
+        dialog_full_information.open()
 
 
 class CostControlApp(MDApp):
@@ -319,8 +353,3 @@ class CostControlApp(MDApp):
 
     def build(self):
         return MainWindow()
-
-
-if __name__ == '__main__':
-    db = DataBase()
-    CostControlApp().run()

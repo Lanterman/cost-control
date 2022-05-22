@@ -133,24 +133,12 @@
                 id: set_expenditure
                 halign: "right"
     MDRaisedButton:
-        text: "Гистограмма"
+        text: "Подробнее"
         pos_hint: {"center_x": 0.5}
-        on_release: root.graphic_design()
+        on_release: root.full_info_of_reports()
     CostDataLabel:
         id: set_description
     Widget:
-
-<RecordWidget>:
-    text_color: [0.67, 0.23, 0.23, 1]
-    theme_text_color: "Custom"
-    MDIcon:
-        id: md_icon
-        pos_hint: {"center_x": 0.57, "center_y": 0.5}
-    IconRightWidget:
-        id: button
-        icon: "dots-vertical"
-        on_release:
-            root.show_menu()
 
 <BoxItemEditReport>:
     orientation: "vertical"
@@ -188,6 +176,74 @@
             pos_hint: {"center_y": 0.5}
             required: True
     Widget:
+
+<BoxItemFullInfoOfReports>:
+    orientation: "vertical"
+    size_hint_y: None
+    height: "330dp"
+    padding: 20, 0, 20, 10
+    MDBoxLayout:
+        orientation: "vertical"
+        MDBoxLayout:
+            spacing: 20
+            FullInfoOfReportsLabel:
+                text: "Продукты:"
+            FullInfoOfReportsLabel:
+                id: per_product
+        MDBoxLayout:
+            spacing: 20
+            FullInfoOfReportsLabel:
+                text: "Транспорт:"
+            FullInfoOfReportsLabel:
+                id: per_transport
+        MDBoxLayout:
+            spacing: 20
+            FullInfoOfReportsLabel:
+                text: "Медицина:"
+            FullInfoOfReportsLabel:
+                id: per_medicine
+        MDBoxLayout:
+            spacing: 20
+            FullInfoOfReportsLabel:
+                text: "Связь:"
+            FullInfoOfReportsLabel:
+                id: per_phone
+        MDBoxLayout:
+            spacing: 20
+            FullInfoOfReportsLabel:
+                text: "Работа:"
+            FullInfoOfReportsLabel:
+                id: per_work
+        MDBoxLayout:
+            spacing: 20
+            FullInfoOfReportsLabel:
+                text: "Хобби:"
+            FullInfoOfReportsLabel:
+                id: per_hobby
+        MDBoxLayout:
+            spacing: 20
+            FullInfoOfReportsLabel:
+                text: "Дом:"
+            FullInfoOfReportsLabel:
+                id: per_home
+        MDBoxLayout:
+            spacing: 20
+            FullInfoOfReportsLabel:
+                text: "Копилка:"
+            FullInfoOfReportsLabel:
+                id: per_moneybox
+
+<RecordWidget>:
+    text_color: [0.67, 0.23, 0.23, 1]
+    theme_text_color: "Custom"
+    MDIcon:
+        id: md_icon
+        pos_hint: {"center_x": 0.57, "center_y": 0.5}
+    IconRightWidget:
+        id: button
+        icon: "dots-vertical"
+        on_release:
+            root.show_menu()
 
 <DropdownMenuFunctionsOfReport>:
     width_mult: 1.6

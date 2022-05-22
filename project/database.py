@@ -1,94 +1,127 @@
+import sqlite3
 from datetime import datetime
 from kivymd.uix.button import MDIconButton
 from kivymd.uix.snackbar import Snackbar
-from sqlalchemy import Column, String, Integer, create_engine, Float, desc
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
-
-Base = declarative_base()
-
-
-class CostControl(Base):
-    """Таблица для DB"""
-
-    __tablename__ = 'CostControl'
-
-    id = Column(Integer, primary_key=True)
-    description = Column(String(50), nullable=False)
-    category = Column(String())
-    costs = Column(String())
-    price = Column(Float, nullable=False)
-    date = Column(String)
-
-    def __repr__(self):
-        return f'{self.id} - {self.description}: {self.costs} - {self.price}'
-
-    def __str__(self):
-        return self.description
+# from sqlalchemy import Column, String, Integer, create_engine, Float, desc
+# from sqlalchemy.ext.declarative import declarative_base
+# from sqlalchemy.orm import sessionmaker
+#
+# Base = declarative_base()
+#
+#
+# class CostControl(Base):
+#     """Таблица для DB"""
+#
+#     __tablename__ = 'CostControl'
+#
+#     id = Column(Integer, primary_key=True)
+#     description = Column(String(50), nullable=False)
+#     category = Column(String())
+#     costs = Column(String())
+#     price = Column(Float, nullable=False)
+#     date = Column(String)
+#
+#     def __repr__(self):
+#         return f'{self.id} - {self.description}: {self.costs} - {self.price}'
+#
+#     def __str__(self):
+#         return self.description
 
 
 class DataBase:
     """Создание/вызов базы данных"""
 
     def __init__(self):
-        engine = create_engine('postgresql+psycopg2://postgres:karmavdele@localhost/cost_control')
-        Base.metadata.create_all(engine)
-        session = sessionmaker(engine)
-        self.connection = session()
+        self.connection = sqlite3.connect("cost_control.db")
+        self.cursor = self.connection.cursor()
+        self.cursor.execute(
+            """
+            CREATE TABLE IF NOT EXISTS CostControl (
+            id integer primary key,
+            description text,
+            category text,
+            costs text,
+            price real,
+            date text)
+            """
+        )
+        self.connection.commit()
+        # engine = create_engine('postgresql+psycopg2://postgres:karmavdele@localhost/cost_control')
+        # Base.metadata.create_all(engine)
+        # session = sessionmaker(engine)
+        # self.connection = session()
 
     def cost_data(self):
         """Поиск цены и тип каждой записи для расчетов"""
 
-        reports = self.connection.query(CostControl.costs, CostControl.price).all()
-        return reports
+        reports = self.cursor.execute("""SELECT costs, price FROM CostControl""")
+        # reports = self.connection.query(CostControl.costs, CostControl.price).all()
+        return reports.fetchall()
+
+    def full_info_of_reports_for_cost(self):
+        reports = self.cursor.execute("""SELECT category, price FROM CostControl WHERE costs=?""", ("Расход",))
+        return reports.fetchall()
 
     def retrieve(self, report_id):
         """Поиск записи в BD"""
 
-        report = self.connection.query(CostControl).get(report_id)
-        return report
+        report = self.cursor.execute(f"""SELECT * FROM CostControl WHERE id=?""", (report_id,))
+        # report = self.connection.query(CostControl).get(report_id)
+        return report.fetchone()
 
     def list(self, query=None):
         """Поиск записей в BD в зависимости от атрибута query"""
 
         if query:
-            reports = self.connection.query(CostControl).filter(
-                CostControl.description.ilike(query)).order_by(desc(CostControl.date)).all()
+            reports = self.cursor.execute(f"""SELECT * FROM CostControl WHERE description LIKE ? ORDER BY date DESC""",
+                                          (query,))
+            # reports = self.connection.query(CostControl).filter(
+            #     CostControl.description.ilike(query)).order_by(desc(CostControl.date)).all()
         else:
-            reports = self.connection.query(CostControl).order_by(desc(CostControl.date)).all()
-        return reports
+            reports = self.cursor.execute(f"""SELECT * FROM CostControl ORDER BY date DESC""")
+            # reports = self.connection.query(CostControl).order_by(desc(CostControl.date)).all()
+        return reports.fetchall()
 
     def insert_data(self, description, category, cost, price):
         """Добавление записей в базу"""
 
         category, price = ValidateData.control_of_filling_the_price_and_category(category, cost, price)
-        cost = CostControl(description=description, category=category, costs=cost, price=price,
-                           date=str(datetime.now())[:19])
-        self.connection.add(cost)
+        # cost = CostControl(description=description, category=category, costs=cost, price=price,
+        #                    date=str(datetime.now())[:19])
+        self.cursor.execute(
+            """INSERT INTO CostControl (description, category, costs, price, date) VALUES (?, ?, ?, ?, ?)""",
+            (description, category, cost, price, str(datetime.now())[:19])
+        )
+        # self.connection.add(cost)
         self.connection.commit()
 
     def update(self, instance, description, category, cost, price):
         """Обновление записи"""
 
         category, price = ValidateData.control_of_filling_the_price_and_category(category, cost, price)
-        instance.description = description
-        instance.category = category
-        instance.costs = cost
-        instance.price = price
-        instance.date = str(datetime.now())[:19]
-        self.connection.add(instance)
+        self.cursor.execute(
+            """UPDATE CostControl SET description=?, category=?, costs=?, price=?, date=? WHERE ID=?""",
+            (description, category, cost, price, str(datetime.now())[:19], instance[0]))
+        # instance.description = description
+        # instance.category = category
+        # instance.costs = cost
+        # instance.price = price
+        # instance.date = str(datetime.now())[:19]
+        # self.connection.add(instance)
         self.connection.commit()
 
     def delete(self, report_id):
         """Удаление записи из BD"""
 
-        self.connection.query(CostControl).filter_by(id=report_id).delete()
+        self.cursor.execute("""SELECT * FROM CostControl WHERE id=?""", (report_id,))
+        # self.connection.query(CostControl).filter_by(id=report_id).delete()
         self.connection.commit()
 
     def delete_all_reports(self):
         """Удаление всех записей из BD"""
 
-        self.connection.query(CostControl).delete()
+        self.cursor.execute("""DELETE FROM CostControl""")
+        # self.connection.query(CostControl).delete()
         # self.connection.commit()
 
 
