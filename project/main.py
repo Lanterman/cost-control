@@ -9,8 +9,8 @@ from kivymd.uix.boxlayout import MDBoxLayout
 from kivymd.uix.list import ThreeLineAvatarIconListItem
 
 from kivy.config import Config
-Config.set('graphics', 'width', '370')
-Config.set('graphics', 'height', '650')
+Config.set('graphics', 'width', '1000')
+Config.set('graphics', 'height', '800')
 Config.write()
 
 db = DataBase()
@@ -35,15 +35,8 @@ class IfNoRecords(MDLabel):
 class CostDataLabel(MDLabel):
     """Метка вкладки расчетов"""
 
-    font_size = 18
-
-
-class FullInfoOfReportsLabel(MDLabel):
-    """Метка вкладки расчетов"""
-
-    font_size = 18
-    theme_text_color = "Custom"
-    text_color = (0.64, 0.64, 0.64, 1)
+    font_size = 55
+    halign = "center"
 
 
 class ButtonToApplyChangesToReport(MDRaisedButton):
@@ -105,7 +98,7 @@ class AbstractClassForDropDownMenu(MDBoxLayout):
     def drop_down_category_menu(self):
         """Выбор значения для категории записи"""
 
-        category = ('---------', 'продукты', 'транспорт', 'медицина', 'связь', 'работа', 'хобби', 'дом', 'копилка')
+        category = ('---------', 'продукты', 'транспорт', 'медицина', 'связь', 'хобби', 'дом', 'копилка')
         menu_items = [{"text": item, "viewclass": "OneLineListItem",
                        "on_release": lambda item=item: self.set_item(item)} for item in category]
         self.menu = DropDownMenuReportsBox(caller=self.ids.drop_item_category, items=menu_items)
@@ -147,34 +140,6 @@ class BoxItemEditReport(AbstractClassForDropDownMenu):
         self.ids.changed_price.set_text(instance=None, text=str(self.report[4]))
 
 
-class BoxItemFullInfoOfReports(MDBoxLayout):
-
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self.reports = db.full_info_of_reports_for_cost()
-        self.info_dict = {'продукты': 0, 'транспорт': 0, 'медицина': 0, 'связь': 0,
-                          'хобби': 0, 'дом': 0, 'копилка': 0, 'другое': 0}
-        self.set_values()
-
-    def set_values(self):
-        """Установка значений"""
-
-        for report in self.reports:
-            if report[0] == "---------":
-                self.info_dict["другое"] -= report[1]
-            else:
-                self.info_dict[report[0]] -= report[1]
-
-        self.ids.per_product.text = str(self.info_dict["продукты"]) + " BYN"
-        self.ids.per_transport.text = str(self.info_dict["транспорт"]) + " BYN"
-        self.ids.per_medicine.text = str(self.info_dict["медицина"]) + " BYN"
-        self.ids.per_phone.text = str(self.info_dict["связь"]) + " BYN"
-        self.ids.per_hobby.text = str(self.info_dict["хобби"]) + " BYN"
-        self.ids.per_home.text = str(self.info_dict["дом"]) + " BYN"
-        self.ids.per_moneybox.text = str(self.info_dict["копилка"]) + " BYN"
-        self.ids.per_other.text = str(self.info_dict["другое"]) + " BYN"
-
-
 class RecordWidget(ThreeLineAvatarIconListItem):
     """Класс отвечающий за функционал записей"""
 
@@ -201,7 +166,7 @@ class RecordWidget(ThreeLineAvatarIconListItem):
 
         self.menu.dismiss()
         dialog_show_report = MDDialog(
-            title=12 * " " + 'All information',
+            title=10 * " " + 'All information',
             text=f"Description:       {self.instance[1]}\n\n"
                  f"Category:           {self.instance[2]}\n\n"
                  f"Cost:                   {self.instance[3]}\n\n"
@@ -301,9 +266,9 @@ class CostNavigationItem(MDBoxLayout):
 
         reports = db.cost_data()
         profit, income, expenditure = self.calculate_price(reports)
-        self.ids.set_profit.text = str(profit) + " BYN"
-        self.ids.set_income.text = str(income) + " BYN"
-        self.ids.set_expenditure.text = str(expenditure) + " BYN"
+        self.ids.set_profit.text = f"Осталось:   {str(profit)} BYN"
+        self.ids.set_income.text = f"Заработано:   {str(income)} BYN"
+        self.ids.set_expenditure.text = f"Потрачено:   {str(expenditure)} BYN"
         self.ids.set_description.text = self.description(reports, profit)
 
     @staticmethod
@@ -335,9 +300,27 @@ class CostNavigationItem(MDBoxLayout):
     def full_info_of_reports():
         """Запуск гистограммы"""
 
-        dialog_full_information = MDDialog(title=2 * " " + "Full information of reports",
-                                           type="custom",
-                                           content_cls=BoxItemFullInfoOfReports())
+        reports = db.full_info_of_reports_for_cost()
+        info_dict = {'продукты': 0, 'транспорт': 0, 'медицина': 0, 'связь': 0,
+                     'хобби': 0, 'дом': 0, 'копилка': 0, 'другое': 0}
+
+        for report in reports:
+            if report[0] == "---------":
+                info_dict["другое"] -= report[1]
+            else:
+                info_dict[report[0]] -= report[1]
+
+        dialog_full_information = MDDialog(
+            title="Подробная информация",
+            text=f"  Продукты:        {info_dict['продукты']} BYN\n\n"
+                 f"  Транспорт:       {info_dict['транспорт']} BYN\n\n"
+                 f"  Медицина:       {info_dict['медицина']} BYN\n\n"
+                 f"  Связь:               {info_dict['связь']} BYN\n\n"
+                 f"  Хобби:               {info_dict['хобби']} BYN\n\n"
+                 f"  Дом:                  {info_dict['дом']} BYN\n\n"
+                 f"  Копилка:          {info_dict['копилка']} BYN\n\n"
+                 f"  Другое:             {info_dict['другое']} BYN"
+                                           )
         dialog_full_information.open()
 
 

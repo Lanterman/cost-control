@@ -108,33 +108,19 @@
 <CostNavigationItem>:
     orientation: "vertical"
     padding: 30
-    spacing: 40
+    spacing: 60
     MDBoxLayout:
         orientation: "vertical"
-        padding: 40, 0
-        MDBoxLayout:
-            MDLabel:
-                font_size: 22
-                text: "Осталось:"
-            MDLabel:
-                id: set_profit
-                font_size: 22
-                halign: "right"
-        MDBoxLayout:
-            CostDataLabel:
-                text: "Заработано:"
-            CostDataLabel:
-                id: set_income
-                halign: "right"
-        MDBoxLayout:
-            CostDataLabel:
-                text: "Потрачено:"
-            CostDataLabel:
-                id: set_expenditure
-                halign: "right"
+        CostDataLabel:
+            id: set_profit
+        CostDataLabel:
+            id: set_income
+        CostDataLabel:
+            id: set_expenditure
     MDRaisedButton:
         text: "Подробнее"
         pos_hint: {"center_x": 0.5}
+        font_size: "20sp"
         on_release: root.full_info_of_reports()
     CostDataLabel:
         id: set_description
@@ -176,62 +162,6 @@
             pos_hint: {"center_y": 0.5}
             required: True
     Widget:
-
-<BoxItemFullInfoOfReports>:
-    orientation: "vertical"
-    size_hint_y: None
-    height: "330dp"
-    padding: 20, 0, 20, 10
-    MDBoxLayout:
-        orientation: "vertical"
-        MDBoxLayout:
-            spacing: 20
-            FullInfoOfReportsLabel:
-                text: "Продукты:"
-            FullInfoOfReportsLabel:
-                id: per_product
-        MDBoxLayout:
-            spacing: 20
-            FullInfoOfReportsLabel:
-                text: "Транспорт:"
-            FullInfoOfReportsLabel:
-                id: per_transport
-        MDBoxLayout:
-            spacing: 20
-            FullInfoOfReportsLabel:
-                text: "Медицина:"
-            FullInfoOfReportsLabel:
-                id: per_medicine
-        MDBoxLayout:
-            spacing: 20
-            FullInfoOfReportsLabel:
-                text: "Связь:"
-            FullInfoOfReportsLabel:
-                id: per_phone
-        MDBoxLayout:
-            spacing: 20
-            FullInfoOfReportsLabel:
-                text: "Хобби:"
-            FullInfoOfReportsLabel:
-                id: per_hobby
-        MDBoxLayout:
-            spacing: 20
-            FullInfoOfReportsLabel:
-                text: "Дом:"
-            FullInfoOfReportsLabel:
-                id: per_home
-        MDBoxLayout:
-            spacing: 20
-            FullInfoOfReportsLabel:
-                text: "Копилка:"
-            FullInfoOfReportsLabel:
-                id: per_moneybox
-        MDBoxLayout:
-            spacing: 20
-            FullInfoOfReportsLabel:
-                text: "Другое:"
-            FullInfoOfReportsLabel:
-                id: per_other
 
 <RecordWidget>:
     text_color: [0.67, 0.23, 0.23, 1]

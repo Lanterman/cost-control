@@ -32,7 +32,7 @@ class DataBase:
     """Создание/вызов базы данных"""
 
     def __init__(self):
-        self.connection = sqlite3.connect("cost_control.db")
+        self.connection = sqlite3.connect("project/cost_control.db")
         self.cursor = self.connection.cursor()
         self.cursor.execute(
             """
