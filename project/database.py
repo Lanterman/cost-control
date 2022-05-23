@@ -113,7 +113,7 @@ class DataBase:
     def delete(self, report_id):
         """Удаление записи из BD"""
 
-        self.cursor.execute("""SELECT * FROM CostControl WHERE id=?""", (report_id,))
+        self.cursor.execute("""DELETE FROM CostControl WHERE id=?""", (report_id,))
         # self.connection.query(CostControl).filter_by(id=report_id).delete()
         self.connection.commit()
 

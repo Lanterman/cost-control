@@ -8,6 +8,11 @@ from kivymd.app import MDApp
 from kivymd.uix.boxlayout import MDBoxLayout
 from kivymd.uix.list import ThreeLineAvatarIconListItem
 
+from kivy.config import Config
+Config.set('graphics', 'width', '370')
+Config.set('graphics', 'height', '650')
+Config.write()
+
 db = DataBase()
 
 
@@ -147,24 +152,27 @@ class BoxItemFullInfoOfReports(MDBoxLayout):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.reports = db.full_info_of_reports_for_cost()
-        self.info_dict = {'продукты': 0, 'транспорт': 0, 'медицина': 0, 'связь': 0, 'работа': 0,
-                          'хобби': 0, 'дом': 0, 'копилка': 0}
+        self.info_dict = {'продукты': 0, 'транспорт': 0, 'медицина': 0, 'связь': 0,
+                          'хобби': 0, 'дом': 0, 'копилка': 0, 'другое': 0}
         self.set_values()
 
     def set_values(self):
         """Установка значений"""
 
         for report in self.reports:
-            self.info_dict[report[0]] -= report[1]
+            if report[0] == "---------":
+                self.info_dict["другое"] -= report[1]
+            else:
+                self.info_dict[report[0]] -= report[1]
 
-        self.ids.per_product.text = str(self.info_dict["продукты"])
-        self.ids.per_transport.text = str(self.info_dict["транспорт"])
-        self.ids.per_medicine.text = str(self.info_dict["медицина"])
-        self.ids.per_phone.text = str(self.info_dict["связь"])
-        self.ids.per_work.text = str(self.info_dict["работа"])
-        self.ids.per_hobby.text = str(self.info_dict["хобби"])
-        self.ids.per_home.text = str(self.info_dict["дом"])
-        self.ids.per_moneybox.text = str(self.info_dict["копилка"])
+        self.ids.per_product.text = str(self.info_dict["продукты"]) + " BYN"
+        self.ids.per_transport.text = str(self.info_dict["транспорт"]) + " BYN"
+        self.ids.per_medicine.text = str(self.info_dict["медицина"]) + " BYN"
+        self.ids.per_phone.text = str(self.info_dict["связь"]) + " BYN"
+        self.ids.per_hobby.text = str(self.info_dict["хобби"]) + " BYN"
+        self.ids.per_home.text = str(self.info_dict["дом"]) + " BYN"
+        self.ids.per_moneybox.text = str(self.info_dict["копилка"]) + " BYN"
+        self.ids.per_other.text = str(self.info_dict["другое"]) + " BYN"
 
 
 class RecordWidget(ThreeLineAvatarIconListItem):
@@ -293,9 +301,9 @@ class CostNavigationItem(MDBoxLayout):
 
         reports = db.cost_data()
         profit, income, expenditure = self.calculate_price(reports)
-        self.ids.set_profit.text = str(profit)
-        self.ids.set_income.text = str(income)
-        self.ids.set_expenditure.text = str(expenditure)
+        self.ids.set_profit.text = str(profit) + " BYN"
+        self.ids.set_income.text = str(income) + " BYN"
+        self.ids.set_expenditure.text = str(expenditure) + " BYN"
         self.ids.set_description.text = self.description(reports, profit)
 
     @staticmethod
