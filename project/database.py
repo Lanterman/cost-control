@@ -3,30 +3,6 @@ from datetime import datetime
 from kivy.core.window import Window
 from kivymd.uix.button import MDIconButton
 from kivymd.uix.snackbar import Snackbar
-# from sqlalchemy import Column, String, Integer, create_engine, Float, desc
-# from sqlalchemy.ext.declarative import declarative_base
-# from sqlalchemy.orm import sessionmaker
-#
-# Base = declarative_base()
-#
-#
-# class CostControl(Base):
-#     """Таблица для DB"""
-#
-#     __tablename__ = 'CostControl'
-#
-#     id = Column(Integer, primary_key=True)
-#     description = Column(String(50), nullable=False)
-#     category = Column(String())
-#     costs = Column(String())
-#     price = Column(Float, nullable=False)
-#     date = Column(String)
-#
-#     def __repr__(self):
-#         return f'{self.id} - {self.description}: {self.costs} - {self.price}'
-#
-#     def __str__(self):
-#         return self.description
 
 
 class DataBase:
@@ -47,16 +23,11 @@ class DataBase:
             """
         )
         self.connection.commit()
-        # engine = create_engine('postgresql+psycopg2://postgres:karmavdele@localhost/cost_control')
-        # Base.metadata.create_all(engine)
-        # session = sessionmaker(engine)
-        # self.connection = session()
 
     def cost_data(self):
         """Поиск цены и тип каждой записи для расчетов"""
 
         reports = self.cursor.execute("""SELECT costs, price FROM CostControl""")
-        # reports = self.connection.query(CostControl.costs, CostControl.price).all()
         return reports.fetchall()
 
     def full_info_of_reports_for_cost(self):
@@ -67,7 +38,6 @@ class DataBase:
         """Поиск записи в BD"""
 
         report = self.cursor.execute(f"""SELECT * FROM CostControl WHERE id=?""", (report_id,))
-        # report = self.connection.query(CostControl).get(report_id)
         return report.fetchone()
 
     def list(self, query=None):
@@ -76,24 +46,18 @@ class DataBase:
         if query:
             reports = self.cursor.execute(f"""SELECT * FROM CostControl WHERE description LIKE ? ORDER BY id DESC""",
                                           (query,))
-            # reports = self.connection.query(CostControl).filter(
-            #     CostControl.description.ilike(query)).order_by(desc(CostControl.date)).all()
         else:
             reports = self.cursor.execute(f"""SELECT * FROM CostControl ORDER BY id DESC""")
-            # reports = self.connection.query(CostControl).order_by(desc(CostControl.date)).all()
         return reports.fetchall()
 
     def insert_data(self, description, category, cost, price):
         """Добавление записей в базу"""
 
         category, price = ValidateData.control_of_filling_the_price_and_category(category, cost, price)
-        # cost = CostControl(description=description, category=category, costs=cost, price=price,
-        #                    date=str(datetime.now())[:19])
         self.cursor.execute(
             """INSERT INTO CostControl (description, category, costs, price, date) VALUES (?, ?, ?, ?, ?)""",
             (description, category, cost, price, str(datetime.now().strftime("%d.%m.%Y %H:%M")))
         )
-        # self.connection.add(cost)
         self.connection.commit()
 
     def update(self, instance, description, category, cost, price):
@@ -103,27 +67,19 @@ class DataBase:
         self.cursor.execute(
             """UPDATE CostControl SET description=?, category=?, costs=?, price=?, date=? WHERE ID=?""",
             (description, category, cost, price, str(datetime.now().strftime("%d.%m.%Y %H:%M")), instance[0]))
-        # instance.description = description
-        # instance.category = category
-        # instance.costs = cost
-        # instance.price = price
-        # instance.date = str(datetime.now())[:19]
-        # self.connection.add(instance)
         self.connection.commit()
 
     def delete(self, report_id):
         """Удаление записи из BD"""
 
         self.cursor.execute("""DELETE FROM CostControl WHERE id=?""", (report_id,))
-        # self.connection.query(CostControl).filter_by(id=report_id).delete()
         self.connection.commit()
 
     def delete_all_reports(self):
         """Удаление всех записей из BD"""
 
         self.cursor.execute("""DELETE FROM CostControl""")
-        # self.connection.query(CostControl).delete()
-        # self.connection.commit()
+        self.connection.commit()
 
 
 class ValidateData:

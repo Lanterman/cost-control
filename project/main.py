@@ -9,12 +9,6 @@ from kivymd.app import MDApp
 from kivymd.uix.boxlayout import MDBoxLayout
 from kivymd.uix.list import ThreeLineAvatarIconListItem
 
-from kivy.config import Config
-
-Config.set('graphics', 'width', '350')
-Config.set('graphics', 'height', '700')
-Config.write()
-
 db = DataBase()
 
 
