@@ -1,3 +1,4 @@
+from kivy.core.window import Window
 from kivymd.uix.button import MDFlatButton, MDRaisedButton
 from kivymd.uix.dialog import MDDialog
 from kivymd.uix.label import MDLabel
@@ -9,8 +10,9 @@ from kivymd.uix.boxlayout import MDBoxLayout
 from kivymd.uix.list import ThreeLineAvatarIconListItem
 
 from kivy.config import Config
-Config.set('graphics', 'width', '1000')
-Config.set('graphics', 'height', '800')
+
+Config.set('graphics', 'width', '350')
+Config.set('graphics', 'height', '700')
 Config.write()
 
 db = DataBase()
@@ -18,10 +20,6 @@ db = DataBase()
 
 class MainWindow(MDBoxLayout):
     """Основное окно"""
-
-
-class DropdownMenuFunctionsOfReport(MDDropdownMenu):
-    """Виджет меню кнопок для каждой записи"""
 
 
 class DropDownMenuReportsBox(MDDropdownMenu):
@@ -35,8 +33,10 @@ class IfNoRecords(MDLabel):
 class CostDataLabel(MDLabel):
     """Метка вкладки расчетов"""
 
-    font_size = 55
-    halign = "center"
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.font_size = "18sp"
+        self.halign = "center"
 
 
 class ButtonToApplyChangesToReport(MDRaisedButton):
@@ -44,7 +44,7 @@ class ButtonToApplyChangesToReport(MDRaisedButton):
 
     def __init__(self, obj_dialog, box_item_edit=None, obj_report=None, **kwargs):
         super().__init__(**kwargs)
-        self.font_size = 16
+        self.font_size = "16sp"
 
         self.app = MDApp.get_running_app()
         self.obj_dialog = obj_dialog
@@ -55,9 +55,11 @@ class ButtonToApplyChangesToReport(MDRaisedButton):
         """Обновить запись"""
 
         if ValidateData().validate_data(description, price):
-            db.update(self.obj_report, description, category, cost, price)
-            Snackbar(text=25 * " " + f"Record {self.obj_report[0]} updated!", font_size=18,
-                     snackbar_y=660, snackbar_animation_dir="Top").open()
+            if self.obj_report[1:-1] != (description, category, cost, float(price)):
+                db.update(self.obj_report, description, category, cost, price)
+                Snackbar(text=20 * " " + f"Запись {self.obj_report[0]} обновлена!", font_size="18sp",
+                         snackbar_y=Window.width * 2, snackbar_animation_dir="Top").open()
+            self.obj_dialog.dismiss()
 
     def on_press(self):
         """Действие при нажатии на кнопку"""
@@ -70,7 +72,8 @@ class ButtonToApplyChangesToReport(MDRaisedButton):
                 self.box_item_edit.ids.changed_price.text
             )
             self.app.root.ids.main_nav.all_reports()
-        self.obj_dialog.dismiss()
+        else:
+            self.obj_dialog.dismiss()
 
 
 class ButtonToDeleteAllReports(MDFlatButton):
@@ -78,7 +81,7 @@ class ButtonToDeleteAllReports(MDFlatButton):
 
     def __init__(self, instance, **kwargs):
         super().__init__(**kwargs)
-        self.font_size = 16
+        self.font_size = "16sp"
         self.instance = instance
         self.app = MDApp.get_running_app()
 
@@ -101,16 +104,18 @@ class AbstractClassForDropDownMenu(MDBoxLayout):
         category = ('---------', 'продукты', 'транспорт', 'медицина', 'связь', 'хобби', 'дом', 'копилка')
         menu_items = [{"text": item, "viewclass": "OneLineListItem",
                        "on_release": lambda item=item: self.set_item(item)} for item in category]
-        self.menu = DropDownMenuReportsBox(caller=self.ids.drop_item_category, items=menu_items)
+        self.menu = DropDownMenuReportsBox(caller=self.ids.drop_item_category, items=menu_items, max_height="230sp",
+                                           width_mult=2.2)
         self.menu.open()
 
-    def drop_down_costs_menu(self):
+    def drop_down_cost_menu(self):
         """Выбор значения для типа записи"""
 
         costs = ('Расход', 'Доход')
         menu_items = [{"text": item, "viewclass": "OneLineListItem",
                        "on_release": lambda item=item: self.set_item(item)} for item in costs]
-        self.menu = DropDownMenuReportsBox(caller=self.ids.drop_item_costs, items=menu_items, max_height=98)
+        self.menu = DropDownMenuReportsBox(caller=self.ids.drop_item_costs, items=menu_items, max_height="98sp",
+                                           width_mult=1.9)
         self.menu.open()
 
     def set_item(self, item):
@@ -158,7 +163,7 @@ class RecordWidget(ThreeLineAvatarIconListItem):
                  {"text": "Edit", "viewclass": "OneLineListItem", "on_release": lambda: self.edit_report()},
                  {"text": "Remove", "viewclass": "OneLineListItem", "on_release": lambda: self.delete_report()}
                  ]
-        self.menu = DropdownMenuFunctionsOfReport(caller=self.ids.button, items=items)
+        self.menu = DropDownMenuReportsBox(caller=self.ids.button, items=items, max_height="147sp", width_mult=1.8)
         self.menu.open()
 
     def show_report(self):
@@ -166,12 +171,12 @@ class RecordWidget(ThreeLineAvatarIconListItem):
 
         self.menu.dismiss()
         dialog_show_report = MDDialog(
-            title=10 * " " + 'All information',
-            text=f"Description:       {self.instance[1]}\n\n"
-                 f"Category:           {self.instance[2]}\n\n"
-                 f"Cost:                   {self.instance[3]}\n\n"
-                 f"Price:                  {self.instance[4]} BYN\n\n"
-                 f"Date:                   {self.instance[5]}"
+            title=4 * " " + 'Полная информация',
+            text=f"Описание:         {self.instance[1]}\n\n"
+                 f"Категория:        {self.instance[2]}\n\n"
+                 f"Тип:                    {self.instance[3]}\n\n"
+                 f"Цена:                 {self.instance[4]} BYN\n\n"
+                 f"Дата:                 {self.instance[5]}",
         )
         dialog_show_report.open()
 
@@ -180,7 +185,7 @@ class RecordWidget(ThreeLineAvatarIconListItem):
 
         self.menu.dismiss()
         box_item_edit = BoxItemEditReport(report_id=self.instance[0])
-        dialog_edit_report = MDDialog(title=18 * " " + "Edit report",
+        dialog_edit_report = MDDialog(title=6 * " " + "Изменить запись",
                                       type="custom",
                                       content_cls=box_item_edit)
         dialog_edit_report.buttons = [
@@ -190,7 +195,7 @@ class RecordWidget(ThreeLineAvatarIconListItem):
                                          text_color=(0.1, 0.1, 1, 1), md_bg_color=(0.86, 0.81, 0.81, 1))
         ]
         dialog_edit_report.create_buttons()
-        dialog_edit_report.ids.root_button_box.height = 50
+        dialog_edit_report.ids.root_button_box.height = "50sp"
         dialog_edit_report.open()
 
     def delete_report(self):
@@ -331,7 +336,7 @@ class CostControlApp(MDApp):
 
     @staticmethod
     def clear_db():
-        delete_dialog = MDDialog(title=9 * " " + "Удалить все записи?",
+        delete_dialog = MDDialog(title=3 * " " + "Удалить все записи?",
                                  text="Это действие безвозвартно удалит все записи!",
                                  radius=[20, 20, 20, 20])
         delete_dialog.buttons = [
@@ -339,7 +344,7 @@ class CostControlApp(MDApp):
             ButtonToDeleteAllReports(text="Cancel", instance=delete_dialog)
         ]
         delete_dialog.create_buttons()
-        delete_dialog.ids.root_button_box.height = 40
+        delete_dialog.ids.root_button_box.height = "40sp"
         delete_dialog.open()
 
     def build(self):

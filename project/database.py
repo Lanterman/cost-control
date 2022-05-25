@@ -1,5 +1,6 @@
 import sqlite3
 from datetime import datetime
+from kivy.core.window import Window
 from kivymd.uix.button import MDIconButton
 from kivymd.uix.snackbar import Snackbar
 # from sqlalchemy import Column, String, Integer, create_engine, Float, desc
@@ -32,17 +33,17 @@ class DataBase:
     """Создание/вызов базы данных"""
 
     def __init__(self):
-        self.connection = sqlite3.connect("project/cost_control.db")
+        self.connection = sqlite3.connect(r"project/cost_control.db")
         self.cursor = self.connection.cursor()
         self.cursor.execute(
             """
             CREATE TABLE IF NOT EXISTS CostControl (
-            id integer primary key,
-            description text,
-            category text,
-            costs text,
-            price real,
-            date text)
+            id INTEGER PRIMARY KEY,
+            description TEXT,
+            category TEXT,
+            costs TEXT,
+            price REAL,
+            date TEXT)
             """
         )
         self.connection.commit()
@@ -73,12 +74,12 @@ class DataBase:
         """Поиск записей в BD в зависимости от атрибута query"""
 
         if query:
-            reports = self.cursor.execute(f"""SELECT * FROM CostControl WHERE description LIKE ? ORDER BY date DESC""",
+            reports = self.cursor.execute(f"""SELECT * FROM CostControl WHERE description LIKE ? ORDER BY id DESC""",
                                           (query,))
             # reports = self.connection.query(CostControl).filter(
             #     CostControl.description.ilike(query)).order_by(desc(CostControl.date)).all()
         else:
-            reports = self.cursor.execute(f"""SELECT * FROM CostControl ORDER BY date DESC""")
+            reports = self.cursor.execute(f"""SELECT * FROM CostControl ORDER BY id DESC""")
             # reports = self.connection.query(CostControl).order_by(desc(CostControl.date)).all()
         return reports.fetchall()
 
@@ -90,7 +91,7 @@ class DataBase:
         #                    date=str(datetime.now())[:19])
         self.cursor.execute(
             """INSERT INTO CostControl (description, category, costs, price, date) VALUES (?, ?, ?, ?, ?)""",
-            (description, category, cost, price, str(datetime.now())[:19])
+            (description, category, cost, price, str(datetime.now().strftime("%d.%m.%Y %H:%M")))
         )
         # self.connection.add(cost)
         self.connection.commit()
@@ -101,7 +102,7 @@ class DataBase:
         category, price = ValidateData.control_of_filling_the_price_and_category(category, cost, price)
         self.cursor.execute(
             """UPDATE CostControl SET description=?, category=?, costs=?, price=?, date=? WHERE ID=?""",
-            (description, category, cost, price, str(datetime.now())[:19], instance[0]))
+            (description, category, cost, price, str(datetime.now().strftime("%d.%m.%Y %H:%M")), instance[0]))
         # instance.description = description
         # instance.category = category
         # instance.costs = cost
@@ -129,7 +130,7 @@ class ValidateData:
     """Валидатор полей"""
 
     def __init__(self, **kwargs):
-        self.snackbar = Snackbar(font_size=14, snackbar_y=660, snackbar_animation_dir="Top",
+        self.snackbar = Snackbar(font_size="14sp", snackbar_y=Window.width * 2, snackbar_animation_dir="Top",
                                  bg_color=(.85, .14, .23, 1))
         self.snackbar.buttons = [
             MDIconButton(icon="close", pos_hint={"center_y": .5}, on_release=self.snackbar.dismiss)
