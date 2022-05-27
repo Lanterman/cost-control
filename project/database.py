@@ -19,9 +19,45 @@ class DataBase:
             category TEXT,
             costs TEXT,
             price REAL,
-            date TEXT)
+            date TEXT);
             """
         )
+        self.cursor.execute(
+            """
+            CREATE TABLE IF NOT EXISTS exchange (
+            id INTEGER PRIMARY KEY,
+            name TEXT,
+            buy TEXT,
+            sell TEXT,
+            date TEXT);
+            """
+        )
+        self.connection.commit()
+
+    def records_output_from_exchange_db(self):
+        """Вывод записей из exchange table"""
+
+        reports = self.cursor.execute("""SELECT * FROM exchange""")
+        return reports.fetchall()
+
+    def insert_data_in_exchange_db(self, data):
+        """Добавление записей в exchange table"""
+
+        for report in data:
+            self.cursor.execute(
+                """INSERT INTO exchange (name, buy, sell, date) VALUES (?, ?, ?, ?)""",
+                (report[0], report[1], report[2], str(datetime.now().strftime("%d.%m.%Y %H:%M")))
+            )
+        self.connection.commit()
+
+    def update_data_in_exchange_db(self, data):
+        """Обновление записей в exchange table"""
+
+        for report in data:
+            self.cursor.execute(
+
+                """UPDATE exchange SET  buy=?, sell=?, date=? WHERE name=?""",
+                (report[1], report[2], str(datetime.now().strftime("%d.%m.%Y %H:%M")), report[0]))
         self.connection.commit()
 
     def cost_data(self):
@@ -31,6 +67,8 @@ class DataBase:
         return reports.fetchall()
 
     def full_info_of_reports_for_cost(self):
+        """Вывод записей с расходом"""
+
         reports = self.cursor.execute("""SELECT category, price FROM CostControl WHERE costs=?""", ("Расход",))
         return reports.fetchall()
 
@@ -96,10 +134,10 @@ class ValidateData:
         """Валидация поля description"""
 
         if not description:
-            self.snackbar.text = "Поле description не может быть пустым!"
+            self.snackbar.text = "Поле 'описание' не может быть пустым!"
             self.snackbar.open()
-        elif len(description) > 50:
-            self.snackbar.text = "Слишком много символов в description!"
+        elif len(description) > 100:
+            self.snackbar.text = "Слишком много символов в описании!"
             self.snackbar.open()
         else:
             return True
@@ -108,13 +146,13 @@ class ValidateData:
         """Валидация поля price"""
 
         if not price:
-            self.snackbar.text = "Поле price не может быть пустым!"
+            self.snackbar.text = "Поле 'цена' не может быть пустым!"
             self.snackbar.open()
         else:
             try:
                 float(price)
             except Exception:
-                self.snackbar.text = "Поле price принимает только числа и точку!"
+                self.snackbar.text = "Поле 'цена' принимает числа и точку!"
                 self.snackbar.open()
             else:
                 return True

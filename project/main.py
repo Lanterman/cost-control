@@ -1,3 +1,4 @@
+import requests
 from kivy.core.window import Window
 from kivymd.uix.button import MDFlatButton, MDRaisedButton
 from kivymd.uix.dialog import MDDialog
@@ -257,8 +258,15 @@ class AddNavigationItem(AbstractClassForDropDownMenu):
         self.ids.drop_item_costs.set_item("Расход")
         self.ids.add_price.set_text(instance=None, text="0")
 
+    def cleaning_on_focus(self):
+        """очистка поля при фокусировке"""
+
+        if self.ids.add_price.text == "0":
+            self.ids.add_price.text = ""
+
 
 class CostNavigationItem(MDBoxLayout):
+    """Вкладка расчетов"""
 
     def set_values(self):
         """Установка текстовых значений"""
@@ -297,7 +305,7 @@ class CostNavigationItem(MDBoxLayout):
 
     @staticmethod
     def full_info_of_reports():
-        """Запуск гистограммы"""
+        """Подробная информация расходов"""
 
         reports = db.full_info_of_reports_for_cost()
         info_dict = {'продукты': 0, 'транспорт': 0, 'медицина': 0, 'связь': 0,
@@ -323,6 +331,60 @@ class CostNavigationItem(MDBoxLayout):
         dialog_full_information.open()
 
 
+class ExchangeNavigationItem(MDBoxLayout):
+    """Вкладка курса валют"""
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        is_exist_reports = db.cursor.execute("""SELECT * FROM exchange""").fetchall()
+        if not is_exist_reports:
+            data = self.get_belarusbank_api()
+            if data:
+                db.insert_data_in_exchange_db(data=data)
+
+    @staticmethod
+    def error_with_internet():
+        """Ошибка при отсутствии интернета"""
+
+        snacbar = ValidateData().snackbar
+        snacbar.text = "Требуется подключение к интернету!"
+        snacbar.open()
+
+    def get_belarusbank_api(self):
+        """Получение API курса у Belarusbank"""
+
+        try:
+            course_api = requests.get(url="https://belarusbank.by/api/kursExchange?city=Мозырь").json()[0]
+        except requests.exceptions.ConnectionError:
+            self.error_with_internet()
+        else:
+            data = [("USD", course_api["USD_in"], course_api["USD_out"]),
+                    ("EUR", course_api["EUR_in"], course_api["EUR_out"]),
+                    ("RUB", course_api["RUB_in"], course_api["RUB_out"])]
+            return data
+
+    def set_default_values(self):
+        """Установка значений по умолчанию"""
+
+        courses = db.records_output_from_exchange_db()
+        if courses:
+            self.ids.usd_in.text = courses[0][2]
+            self.ids.usd_out.text = courses[0][3]
+            self.ids.eur_in.text = courses[1][2]
+            self.ids.eur_out.text = courses[1][3]
+            self.ids.rub_in.text = courses[2][2]
+            self.ids.rub_out.text = courses[2][3]
+            self.ids.update_time.text = f"Обновлено {courses[0][4]}"
+
+    def set_course_api(self):
+        """Обновление курса валют"""
+
+        data = self.get_belarusbank_api()
+        if data:
+            db.update_data_in_exchange_db(data=data)
+            self.set_default_values()
+
+
 class CostControlApp(MDApp):
     """Основное приложение"""
 
@@ -330,6 +392,8 @@ class CostControlApp(MDApp):
 
     @staticmethod
     def clear_db():
+        """Удаление всех записей с БД"""
+
         delete_dialog = MDDialog(title=3 * " " + "Удалить все записи?",
                                  text="Это действие безвозвартно удалит все записи!",
                                  radius=[20, 20, 20, 20])

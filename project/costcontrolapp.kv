@@ -34,7 +34,7 @@
                         MDTextField:
                             id: search_id
                             font_size: "18sp"
-                            hint_text: "search"
+                            hint_text: "Поиск"
                             line_color_focus: [0.20, 0.25, 0.26, 1]
                         MDIconButton:
                             icon: "magnify"
@@ -55,6 +55,14 @@
                     root.ids.cost_nav.set_values()
                 CostNavigationItem:
                     id: cost_nav
+
+            MDBottomNavigationItem:
+                name: "screen exchange"
+                icon: "bank"
+                on_tab_press:
+                    root.ids.exchange_nav.set_default_values()
+                ExchangeNavigationItem:
+                    id: exchange_nav
 
 <AddNavigationItem>:
     orientation: "vertical"
@@ -82,11 +90,12 @@
     MDTextField:
         id: add_price
         hint_text: "Введите цену"
-        required: True
         text: "0"
         font_size: "18sp"
         helper_text: "Десятичные числа писать через точку!"
         helper_text_mode: "on_focus"
+        on_focus:
+            root.cleaning_on_focus()
     Widget:
     MDFloatingActionButton:
         icon: "plus"
@@ -115,9 +124,62 @@
         text: "Подробнее"
         pos_hint: {"center_x": 0.5}
         font_size: "16sp"
-        on_release: root.full_info_of_reports()
+        on_release:
+            root.full_info_of_reports()
     CostDataLabel:
         id: set_description
+    Widget:
+
+<ExchangeNavigationItem>:
+    orientation: "vertical"
+    MDBoxLayout:
+        orientation: "vertical"
+        size_hint_y: None
+        height: "160dp"
+        padding: "5sp", "15sp", "10sp", "10sp"
+        md_bg_color: [0.85, 0.92, 0.98, 1]
+        MDBoxLayout:
+            CostDataLabel:
+                text: "Валюта"
+            CostDataLabel:
+                text: "Покупка"
+            CostDataLabel:
+                text: "Продажа"
+        MDBoxLayout:
+            CostDataLabel:
+                text: "USD"
+            CostDataLabel:
+                id: usd_in
+            CostDataLabel:
+                id: usd_out
+        MDBoxLayout:
+            CostDataLabel:
+                text: "EUR"
+            CostDataLabel:
+                id: eur_in
+            CostDataLabel:
+                id: eur_out
+        MDBoxLayout:
+            CostDataLabel:
+                text: "RUB"
+            CostDataLabel:
+                id: rub_in
+            CostDataLabel:
+                id: rub_out
+    MDBoxLayout:
+        size_hint_y: None
+        height: "60dp"
+        padding: 0, "20sp"
+        MDLabel:
+            id: update_time
+            font_size: "16sp"
+            halign: "center"
+    MDRaisedButton:
+        text: "Обновить"
+        pos_hint: {"center_x": 0.5}
+        font_size: "16sp"
+        on_release:
+            root.set_course_api()
     Widget:
 
 <BoxItemEditReport>:
@@ -131,7 +193,6 @@
         MDTextField:
             id: changed_description
             pos_hint: {"center_y": 0.5}
-            required: True
     MDBoxLayout:
         MDLabel:
             text: "Категория"
@@ -175,7 +236,7 @@
 
 <IfNoRecords>:
     halign: "center"
-    text: "No records"
+    text: "Нет записей"
     theme_text_color: "Custom"
     text_color: 0.89, 0.39, 0.26, 1
 
