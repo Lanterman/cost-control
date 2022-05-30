@@ -41,6 +41,8 @@ class MainWindow(MDBoxLayout):
         self.menu_courses.dismiss()
         db.update_report_of_current_currency(x)
         self.set_title_toolbar(x)
+        self.ids.main_nav.all_reports()
+        self.ids.cost_nav.set_values()
 
     def set_title_toolbar(self, currency):
         self.ids.tool.title = f"Cost Control({currency})"
@@ -94,7 +96,7 @@ class ButtonToApplyChangesToReport(MDRaisedButton):
         """Обновить запись"""
 
         if ValidateData().validate_data(description, price):
-            if self.obj_report[1:-1] != (description, category, cost, float(price)):
+            if self.obj_report[1:-2] != (description, category, cost, float(price)):
                 db.update(self.obj_report, description, category, cost, price)
                 Snackbar(text=20 * " " + f"Запись {self.obj_report[0]} обновлена!", font_size="18sp",
                          snackbar_y=Window.width * 2, snackbar_animation_dir="Top").open()
@@ -215,8 +217,8 @@ class RecordWidget(ThreeLineAvatarIconListItem):
             text=f"Описание:         {self.instance[1]}\n\n"
                  f"Категория:        {self.instance[2]}\n\n"
                  f"Тип:                    {self.instance[3]}\n\n"
-                 f"Цена:                 {self.instance[4]} BYN\n\n"
-                 f"Дата:                 {self.instance[5]}",
+                 f"Цена:                 {self.instance[4]} {self.instance[5]}\n\n"
+                 f"Дата:                 {self.instance[6]}",
         )
         dialog_show_report.open()
 
@@ -276,8 +278,8 @@ class MainNavigationItem(MDBoxLayout):
                 space = 27 - len(report[3]) - len(str(report[4]))
                 result_list_widget.add_widget(
                     RecordWidget(text=f'{report[1]}',
-                                 secondary_text=report[3] + space * " " + str(report[4]) + ' BYN',
-                                 instance=report, tertiary_text=f'{report[5]}')
+                                 secondary_text=report[3] + space * " " + str(report[4]) + f" {report[5]}",
+                                 instance=report, tertiary_text=f'{report[6]}')
                 )
         else:
             result_list_widget.add_widget(IfNoRecords())
@@ -316,11 +318,12 @@ class CostNavigationItem(MDBoxLayout):
     def set_values(self):
         """Установка текстовых значений"""
 
-        reports = db.cost_data()
+        currency = db.show_currency()[1]
+        reports = db.cost_data(currency)
         profit, income, expenditure = self.calculate_price(reports)
-        self.ids.set_profit.text = f"Осталось:   {str(profit)} BYN"
-        self.ids.set_income.text = f"Заработано:   {str(income)} BYN"
-        self.ids.set_expenditure.text = f"Потрачено:   {str(expenditure)} BYN"
+        self.ids.set_profit.text = f"Осталось:   {str(profit)} {currency}"
+        self.ids.set_income.text = f"Заработано:   {str(income)} {currency}"
+        self.ids.set_expenditure.text = f"Потрачено:   {str(expenditure)} {currency}"
         self.ids.set_description.text = self.description(reports, profit)
 
     @staticmethod
@@ -352,7 +355,8 @@ class CostNavigationItem(MDBoxLayout):
     def full_info_of_reports():
         """Подробная информация расходов"""
 
-        reports = db.full_info_of_reports_for_cost()
+        currency = db.show_currency()[1]
+        reports = db.full_info_of_reports_for_cost(currency)
         info_dict = {'продукты': 0, 'транспорт': 0, 'медицина': 0, 'связь': 0,
                      'хобби': 0, 'дом': 0, 'копилка': 0, 'другое': 0}
 
@@ -364,15 +368,15 @@ class CostNavigationItem(MDBoxLayout):
 
         dialog_full_information = MDDialog(
             title="Подробная информация",
-            text=f"  Продукты:        {info_dict['продукты']} BYN\n\n"
-                 f"  Транспорт:       {info_dict['транспорт']} BYN\n\n"
-                 f"  Медицина:       {info_dict['медицина']} BYN\n\n"
-                 f"  Связь:               {info_dict['связь']} BYN\n\n"
-                 f"  Хобби:               {info_dict['хобби']} BYN\n\n"
-                 f"  Дом:                  {info_dict['дом']} BYN\n\n"
-                 f"  Копилка:          {info_dict['копилка']} BYN\n\n"
-                 f"  Другое:             {info_dict['другое']} BYN"
-                                           )
+            text=f"  Продукты:        {info_dict['продукты']} {currency}\n\n"
+                 f"  Транспорт:       {info_dict['транспорт']} {currency}\n\n"
+                 f"  Медицина:       {info_dict['медицина']} {currency}\n\n"
+                 f"  Связь:               {info_dict['связь']} {currency}\n\n"
+                 f"  Хобби:               {info_dict['хобби']} {currency}\n\n"
+                 f"  Дом:                  {info_dict['дом']} {currency}\n\n"
+                 f"  Копилка:          {info_dict['копилка']} {currency}\n\n"
+                 f"  Другое:             {info_dict['другое']} {currency}"
+        )
         dialog_full_information.open()
 
 
@@ -381,7 +385,7 @@ class ExchangeNavigationItem(MDBoxLayout):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        is_exist_reports = db.cursor.execute("""SELECT * FROM exchange""").fetchall()
+        is_exist_reports = db.records_output_from_exchange_db()
         if not is_exist_reports:
             data = self.get_belarusbank_api()
             if data:
@@ -400,27 +404,48 @@ class ExchangeNavigationItem(MDBoxLayout):
 
         try:
             course_api = requests.get(url="https://belarusbank.by/api/kursExchange?city=Мозырь").json()[0]
+            print(course_api)
         except requests.exceptions.ConnectionError:
             self.error_with_internet()
         else:
-            data = [
-                ("USD", course_api["USD_in"], course_api["USD_out"]),
-                ("EUR", course_api["EUR_in"], course_api["EUR_out"]),
-                ("RUB", course_api["RUB_in"], course_api["RUB_out"])
-            ]
+            currency = db.show_currency()[1]
+            if currency == "BYN":
+                data = [
+                    ("USD", course_api["USD_in"], course_api["USD_out"]),
+                    ("EUR", course_api["EUR_in"], course_api["EUR_out"]),
+                    ("RUB", course_api["RUB_in"], course_api["RUB_out"])
+                ]
+            elif currency == "RUB":
+                data = [
+                    ("USD", course_api["USD_RUB_in"], course_api["USD_RUB_out"]),
+                    ("EUR", course_api["RUB_EUR_in"], course_api["RUB_EUR_out"]),
+                    ("BYN", course_api["RUB_in"], course_api["RUB_out"])
+                ]
+            else:
+                data = [
+                    ("BYN", str(1 / float(course_api["USD_in"])), str(1 / float(course_api["USD_out"]))),
+                    ("EUR", course_api["USD_EUR_in"], course_api["USD_EUR_out"]),
+                    ("RUB", course_api["USD_RUB_in"], course_api["USD_RUB_out"])
+                ]
             return data
 
     def set_default_values(self):
         """Установка значений по умолчанию"""
 
         courses = db.records_output_from_exchange_db()
+        print(courses)
         if courses:
-            self.ids.usd_in.text = courses[0][2]
-            self.ids.usd_out.text = courses[0][3]
-            self.ids.eur_in.text = courses[1][2]
-            self.ids.eur_out.text = courses[1][3]
-            self.ids.rub_in.text = courses[2][2]
-            self.ids.rub_out.text = courses[2][3]
+            self.ids.currency_1_1.text = courses[0][1]
+            self.ids.currency_1_2.text = courses[0][2]
+            self.ids.currency_1_3.text = courses[0][3]
+
+            self.ids.currency_2_1.text = courses[1][1]
+            self.ids.currency_2_2.text = courses[1][2]
+            self.ids.currency_2_3.text = courses[1][3]
+
+            self.ids.currency_3_1.text = courses[2][1]
+            self.ids.currency_3_2.text = courses[2][2]
+            self.ids.currency_3_3.text = courses[2][3]
             self.ids.update_time.text = f"Обновлено {courses[0][4]}"
 
     def set_course_api(self):

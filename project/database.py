@@ -19,6 +19,7 @@ class DataBase:
             category TEXT,
             costs TEXT,
             price REAL,
+            currency TEXT,
             date TEXT);
             """
         )
@@ -73,23 +74,26 @@ class DataBase:
     def update_data_in_exchange_db(self, data):
         """Обновление записей в exchange table"""
 
-        for report in data:
+        for id_currency, report in enumerate(data, 1):
             self.cursor.execute(
-                """UPDATE exchange SET  buy=?, sell=?, date=? WHERE name=?""",
-                (report[1], report[2], str(datetime.now().strftime("%d.%m.%Y %H:%M")), report[0])
+                """UPDATE exchange SET  name=?, buy=?, sell=?, date=? WHERE id=?""",
+                (report[0], report[1], report[2], str(datetime.now().strftime("%d.%m.%Y %H:%M")), id_currency)
             )
         self.connection.commit()
 
-    def cost_data(self):
+    def cost_data(self, currency):
         """Поиск цены и тип каждой записи для расчетов"""
 
-        reports = self.cursor.execute("""SELECT costs, price FROM CostControl""")
+        reports = self.cursor.execute("""SELECT costs, price FROM CostControl WHERE currency=?""", (currency,))
         return reports.fetchall()
 
-    def full_info_of_reports_for_cost(self):
+    def full_info_of_reports_for_cost(self, currency):
         """Вывод записей с расходом"""
 
-        reports = self.cursor.execute("""SELECT category, price FROM CostControl WHERE costs=?""", ("Расход",))
+        reports = self.cursor.execute(
+            """SELECT category, price FROM CostControl WHERE costs=? AND currency=?""",
+            ("Расход", currency)
+        )
         return reports.fetchall()
 
     def retrieve(self, report_id):
@@ -101,22 +105,29 @@ class DataBase:
     def list(self, query=None):
         """Поиск записей в BD в зависимости от атрибута query"""
 
+        currency = self.show_currency()[1]
         if query:
             reports = self.cursor.execute(
-                f"""SELECT * FROM CostControl WHERE description LIKE ? ORDER BY id DESC""",
-                (query,)
+                f"""SELECT * FROM CostControl WHERE description LIKE ? AND currency=? ORDER BY id DESC""",
+                (query, currency)
             )
         else:
-            reports = self.cursor.execute(f"""SELECT * FROM CostControl ORDER BY id DESC""")
+            reports = self.cursor.execute(
+                f"""SELECT * FROM CostControl WHERE currency=? ORDER BY id DESC""",
+                (currency,)
+            )
         return reports.fetchall()
 
     def insert_data(self, description, category, cost, price):
         """Добавление записей в базу"""
 
         category, price = ValidateData.control_of_filling_the_price_and_category(category, cost, price)
+        currency = self.show_currency()[1]
         self.cursor.execute(
-            """INSERT INTO CostControl (description, category, costs, price, date) VALUES (?, ?, ?, ?, ?)""",
-            (description, category, cost, price, str(datetime.now().strftime("%d.%m.%Y %H:%M")))
+            """
+            INSERT INTO CostControl (description, category, costs, price, currency, date) VALUES (?, ?, ?, ?, ?, ?)
+            """,
+            (description, category, cost, price, currency, str(datetime.now().strftime("%d.%m.%Y %H:%M")))
         )
         self.connection.commit()
 
