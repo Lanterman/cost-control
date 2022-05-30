@@ -32,6 +32,26 @@ class DataBase:
             date TEXT);
             """
         )
+        self.cursor.execute(
+            """
+            CREATE TABLE IF NOT EXISTS current_currency (
+            id INTEGER PRIMARY KEY, 
+            name TEXT);
+            """
+        )
+        self.connection.commit()
+
+    def show_currency(self):
+        """"""
+        current_currency = self.cursor.execute("""SELECT * FROM current_currency""").fetchone()
+        return current_currency
+
+    def create_report_in_current_currency(self):
+        self.cursor.execute("""INSERT INTO current_currency (name) VALUES (?)""", ("BYN",))
+        self.connection.commit()
+
+    def update_report_of_current_currency(self, currency):
+        self.cursor.execute("""UPDATE current_currency SET  name=? WHERE id=?""", (currency, 1))
         self.connection.commit()
 
     def records_output_from_exchange_db(self):
@@ -55,9 +75,9 @@ class DataBase:
 
         for report in data:
             self.cursor.execute(
-
                 """UPDATE exchange SET  buy=?, sell=?, date=? WHERE name=?""",
-                (report[1], report[2], str(datetime.now().strftime("%d.%m.%Y %H:%M")), report[0]))
+                (report[1], report[2], str(datetime.now().strftime("%d.%m.%Y %H:%M")), report[0])
+            )
         self.connection.commit()
 
     def cost_data(self):
@@ -82,8 +102,10 @@ class DataBase:
         """Поиск записей в BD в зависимости от атрибута query"""
 
         if query:
-            reports = self.cursor.execute(f"""SELECT * FROM CostControl WHERE description LIKE ? ORDER BY id DESC""",
-                                          (query,))
+            reports = self.cursor.execute(
+                f"""SELECT * FROM CostControl WHERE description LIKE ? ORDER BY id DESC""",
+                (query,)
+            )
         else:
             reports = self.cursor.execute(f"""SELECT * FROM CostControl ORDER BY id DESC""")
         return reports.fetchall()
@@ -104,7 +126,8 @@ class DataBase:
         category, price = ValidateData.control_of_filling_the_price_and_category(category, cost, price)
         self.cursor.execute(
             """UPDATE CostControl SET description=?, category=?, costs=?, price=?, date=? WHERE ID=?""",
-            (description, category, cost, price, str(datetime.now().strftime("%d.%m.%Y %H:%M")), instance[0]))
+            (description, category, cost, price, str(datetime.now().strftime("%d.%m.%Y %H:%M")), instance[0])
+        )
         self.connection.commit()
 
     def delete(self, report_id):

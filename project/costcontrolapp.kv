@@ -4,8 +4,12 @@
     orientation: 'vertical'
 
     MDToolbar:
-        title: app.title
-        left_action_items: [["database-remove-outline", lambda x: app.clear_db()]]
+        id: tool
+        left_action_items:
+            [
+            ["database-remove-outline", lambda x: root.clear_db()],
+            ["dots-vertical", lambda x: root.show_menu_courses()]
+            ]
 
     MDBoxLayout:
         orientation: 'horizontal'

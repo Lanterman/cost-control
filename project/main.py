@@ -16,6 +16,50 @@ db = DataBase()
 class MainWindow(MDBoxLayout):
     """Основное окно"""
 
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.is_exist_report = db.show_currency()
+        if not self.is_exist_report:
+            db.create_report_in_current_currency()
+            self.set_title_toolbar("BYN")
+        else:
+            self.set_title_toolbar(self.is_exist_report[1])
+
+    def show_menu_courses(self):
+        """Меню работы с записями"""
+
+        items = [
+            {"text": "RUB", "viewclass": "OneLineListItem", "on_release": lambda x="RUB": self.set_currency(x)},
+            {"text": "BYN", "viewclass": "OneLineListItem", "on_release": lambda x="BYN": self.set_currency(x)},
+            {"text": "USD", "viewclass": "OneLineListItem", "on_release": lambda x="USD": self.set_currency(x)}
+        ]
+        self.menu_courses = DropDownMenuReportsBox(caller=self.ids.tool, items=items, max_height="147sp",
+                                                   width_mult=1.3, hor_growth="left")
+        self.menu_courses.open()
+
+    def set_currency(self, x):
+        self.menu_courses.dismiss()
+        db.update_report_of_current_currency(x)
+        self.set_title_toolbar(x)
+
+    def set_title_toolbar(self, currency):
+        self.ids.tool.title = f"Cost Control({currency})"
+
+    @staticmethod
+    def clear_db():
+        """Удаление всех записей с БД"""
+
+        delete_dialog = MDDialog(title=3 * " " + "Удалить все записи?",
+                                 text="Это действие безвозвартно удалит все записи!",
+                                 radius=[20, 20, 20, 20])
+        delete_dialog.buttons = [
+            ButtonToDeleteAllReports(text="OK", instance=delete_dialog),
+            ButtonToDeleteAllReports(text="Cancel", instance=delete_dialog)
+        ]
+        delete_dialog.create_buttons()
+        delete_dialog.ids.root_button_box.height = "40sp"
+        delete_dialog.open()
+
 
 class DropDownMenuReportsBox(MDDropdownMenu):
     """Виджет меню выбора значения для поля"""
@@ -154,11 +198,12 @@ class RecordWidget(ThreeLineAvatarIconListItem):
     def show_menu(self):
         """Меню работы с записями"""
 
-        items = [{"text": "Show", "viewclass": "OneLineListItem", "on_release": lambda: self.show_report()},
-                 {"text": "Edit", "viewclass": "OneLineListItem", "on_release": lambda: self.edit_report()},
-                 {"text": "Remove", "viewclass": "OneLineListItem", "on_release": lambda: self.delete_report()}
-                 ]
-        self.menu = DropDownMenuReportsBox(caller=self.ids.button, items=items, max_height="147sp", width_mult=1.8)
+        items = [
+            {"text": "Просмотр", "viewclass": "OneLineListItem", "on_release": lambda: self.show_report()},
+            {"text": "Изменить", "viewclass": "OneLineListItem", "on_release": lambda: self.edit_report()},
+            {"text": "Удалить", "viewclass": "OneLineListItem", "on_release": lambda: self.delete_report()}
+             ]
+        self.menu = DropDownMenuReportsBox(caller=self.ids.button, items=items, max_height="147sp", width_mult=2.2)
         self.menu.open()
 
     def show_report(self):
@@ -358,9 +403,11 @@ class ExchangeNavigationItem(MDBoxLayout):
         except requests.exceptions.ConnectionError:
             self.error_with_internet()
         else:
-            data = [("USD", course_api["USD_in"], course_api["USD_out"]),
-                    ("EUR", course_api["EUR_in"], course_api["EUR_out"]),
-                    ("RUB", course_api["RUB_in"], course_api["RUB_out"])]
+            data = [
+                ("USD", course_api["USD_in"], course_api["USD_out"]),
+                ("EUR", course_api["EUR_in"], course_api["EUR_out"]),
+                ("RUB", course_api["RUB_in"], course_api["RUB_out"])
+            ]
             return data
 
     def set_default_values(self):
@@ -387,23 +434,6 @@ class ExchangeNavigationItem(MDBoxLayout):
 
 class CostControlApp(MDApp):
     """Основное приложение"""
-
-    title = "Cost Control"
-
-    @staticmethod
-    def clear_db():
-        """Удаление всех записей с БД"""
-
-        delete_dialog = MDDialog(title=3 * " " + "Удалить все записи?",
-                                 text="Это действие безвозвартно удалит все записи!",
-                                 radius=[20, 20, 20, 20])
-        delete_dialog.buttons = [
-            ButtonToDeleteAllReports(text="OK", instance=delete_dialog),
-            ButtonToDeleteAllReports(text="Cancel", instance=delete_dialog)
-        ]
-        delete_dialog.create_buttons()
-        delete_dialog.ids.root_button_box.height = "40sp"
-        delete_dialog.open()
 
     def build(self):
         return MainWindow()
