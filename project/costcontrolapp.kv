@@ -31,32 +31,12 @@
                     app.root.ids.main_nav.all_reports()
                 MainNavigationItem:
                     id: main_nav
-                    orientation: 'vertical'
-                    MDBoxLayout:
-                        md_bg_color: [0.85, 0.92, 0.98, 1]
-                        padding: "10sp", "20sp", "5sp", "0sp"
-                        MDTextField:
-                            id: search_id
-                            font_size: "18sp"
-                            hint_text: "Поиск"
-                            line_color_focus: [0.20, 0.25, 0.26, 1]
-                        MDIconButton:
-                            icon: "magnify"
-                            pos_hint: {"center_x": 0.5, "center_y": 0.6}
-                            on_release:
-                                root.ids.main_nav.searching_results(root.ids.search_id.text)
-                    ScrollView:
-                        size_hint: 0.99, 8
-                        bar_width: 11
-                        scroll_type: ["bars", "content"]
-                        MDList:
-                            id: show_result
 
             MDBottomNavigationItem:
                 name: "screen cost"
                 icon: "currency-usd"
                 on_tab_press:
-                    root.ids.cost_nav.set_values()
+                    root.ids.cost_nav.set_values(root.currency)
                 CostNavigationItem:
                     id: cost_nav
 
@@ -111,6 +91,28 @@
             root.ids.add_price.text)
     Widget:
         size_hint_y: 0.1
+
+<MainNavigationItem>:
+    orientation: 'vertical'
+    MDBoxLayout:
+        md_bg_color: [0.85, 0.92, 0.98, 1]
+        padding: "10sp", "20sp", "5sp", "0sp"
+        MDTextField:
+            id: search_id
+            font_size: "18sp"
+            hint_text: "Поиск"
+            line_color_focus: [0.20, 0.25, 0.26, 1]
+        MDIconButton:
+            icon: "magnify"
+            pos_hint: {"center_x": 0.5, "center_y": 0.6}
+            on_release:
+                root.searching_results(root.ids.search_id.text)
+    ScrollView:
+        size_hint: 0.99, 8
+        bar_width: 11
+        scroll_type: ["bars", "content"]
+        MDList:
+            id: show_result
 
 <CostNavigationItem>:
     orientation: "vertical"

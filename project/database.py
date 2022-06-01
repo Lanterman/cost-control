@@ -43,15 +43,20 @@ class DataBase:
         self.connection.commit()
 
     def show_currency(self):
-        """"""
+        """Получить название валюты"""
+
         current_currency = self.cursor.execute("""SELECT * FROM current_currency""").fetchone()
         return current_currency
 
     def create_report_in_current_currency(self):
+        """Создать запись с курсом"""
+
         self.cursor.execute("""INSERT INTO current_currency (name) VALUES (?)""", ("BYN",))
         self.connection.commit()
 
     def update_report_of_current_currency(self, currency):
+        """Обновить курс"""
+
         self.cursor.execute("""UPDATE current_currency SET  name=? WHERE id=?""", (currency, 1))
         self.connection.commit()
 
