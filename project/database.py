@@ -107,10 +107,9 @@ class DataBase:
         report = self.cursor.execute(f"""SELECT * FROM CostControl WHERE id=?""", (report_id,))
         return report.fetchone()
 
-    def list(self, query=None):
+    def list(self, currency, query=None):
         """Поиск записей в BD в зависимости от атрибута query"""
 
-        currency = self.show_currency()[1]
         if query:
             reports = self.cursor.execute(
                 f"""SELECT * FROM CostControl WHERE description LIKE ? AND currency=? ORDER BY id DESC""",
@@ -123,11 +122,9 @@ class DataBase:
             )
         return reports.fetchall()
 
-    def insert_data(self, description, category, cost, price):
+    def insert_data(self, description, category, cost, price, currency):
         """Добавление записей в базу"""
 
-        category, price = ValidateData.control_of_filling_the_price_and_category(category, cost, price)
-        currency = self.show_currency()[1]
         self.cursor.execute(
             """
             INSERT INTO CostControl (description, category, costs, price, currency, date) VALUES (?, ?, ?, ?, ?, ?)

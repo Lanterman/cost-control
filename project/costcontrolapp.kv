@@ -28,7 +28,7 @@
                 name: "screen main"
                 icon: "calendar-text-outline"
                 on_tab_press:
-                    app.root.ids.main_nav.all_reports()
+                    app.root.ids.main_nav.all_reports(root.currency)
                 MainNavigationItem:
                     id: main_nav
 
@@ -106,7 +106,7 @@
             icon: "magnify"
             pos_hint: {"center_x": 0.5, "center_y": 0.6}
             on_release:
-                root.searching_results(root.ids.search_id.text)
+                root.searching_results(root.ids.search_id.text, app.root.currency)
     ScrollView:
         size_hint: 0.99, 8
         bar_width: 11
@@ -131,7 +131,7 @@
         pos_hint: {"center_x": 0.5}
         font_size: "16sp"
         on_release:
-            root.full_info_of_reports()
+            root.full_info_of_reports(app.root.currency)
     CostDataLabel:
         id: set_description
     Widget:

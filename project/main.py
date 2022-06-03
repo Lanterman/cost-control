@@ -22,9 +22,7 @@ class MainWindow(MDBoxLayout):
         self.currency = self.is_exist_report[1] if self.is_exist_report else "BYN"
         if not self.is_exist_report:
             db.create_report_in_current_currency()
-            self.set_title_toolbar(self.currency)
-        else:
-            self.set_title_toolbar(self.currency)
+        self.set_title_toolbar(self.currency)
 
     def show_menu_courses(self):
         """Меню работы с записями"""
@@ -45,9 +43,9 @@ class MainWindow(MDBoxLayout):
         self.menu_courses.dismiss()
         db.update_report_of_current_currency(self.currency)
         self.set_title_toolbar(self.currency)
-        self.ids.main_nav.all_reports()
+        self.ids.main_nav.all_reports(self.currency)
         self.ids.cost_nav.set_values(self.currency)
-        self.ids.exchange_nav.set_course_api()
+        self.ids.exchange_nav.set_course_api(change_course=True)
 
     def set_title_toolbar(self, currency):
         """Установить название"""
@@ -119,7 +117,7 @@ class ButtonToApplyChangesToReport(MDRaisedButton):
                 self.box_item_edit.ids.drop_item_costs.ids.label_item.text,
                 self.box_item_edit.ids.changed_price.text
             )
-            self.app.root.ids.main_nav.all_reports()
+            self.app.root.ids.main_nav.all_reports(self.app.root.currency)
         else:
             self.obj_dialog.dismiss()
 
@@ -258,17 +256,17 @@ class RecordWidget(ThreeLineAvatarIconListItem):
 class MainNavigationItem(MDBoxLayout):
     """Вкладка с записями"""
 
-    def searching_results(self, query):
+    def searching_results(self, query, currency):
         """Вывод записей по поиску"""
 
         query = f'%{query}%'
-        result = db.list(query)
+        result = db.list(currency, query)
         self.show_results(result)
 
-    def all_reports(self):
+    def all_reports(self, currency):
         """Вывод всех записей"""
 
-        result = db.list()
+        result = db.list(currency)
         self.show_results(result)
 
     def show_results(self, query):
@@ -294,8 +292,8 @@ class AddNavigationItem(AbstractClassForDropDownMenu):
         """Добавление записи в BD"""
 
         if ValidateData().validate_data(description, price):
-            db.insert_data(description, category, cost, price)
             app = MDApp.get_running_app()
+            db.insert_data(description, category, cost, price, currency=app.root.currency)
             screen_manager = app.root.ids.bottom_nav
             self.clearing_text_widgets()
             screen_manager.switch_tab("screen main")
@@ -354,10 +352,9 @@ class CostNavigationItem(MDBoxLayout):
         return text
 
     @staticmethod
-    def full_info_of_reports():
+    def full_info_of_reports(currency):
         """Подробная информация расходов"""
 
-        currency = db.show_currency()[1]
         reports = db.full_info_of_reports_for_cost(currency)
         info_dict = {'продукты': 0, 'транспорт': 0, 'медицина': 0, 'связь': 0,
                      'хобби': 0, 'дом': 0, 'копилка': 0, 'другое': 0}
@@ -389,7 +386,8 @@ class ExchangeNavigationItem(MDBoxLayout):
         super().__init__(**kwargs)
         if not db.records_output_from_exchange_db():
             data = self.get_api()
-            db.insert_data_in_exchange_db(data)
+            if data:
+                db.insert_data_in_exchange_db(data)
 
     @staticmethod
     def error_with_internet():
@@ -399,23 +397,24 @@ class ExchangeNavigationItem(MDBoxLayout):
         snacbar.text = "Требуется подключение к интернету!"
         snacbar.open()
 
-    def get_api(self):
+    def get_api(self, change_course=False):
         """Получение API курса"""
 
         try:
             course_api = requests.get(url="https://cdn.cur.su/api/cbr.json").json()["rates"]
         except requests.exceptions.ConnectionError:
-            self.error_with_internet()
+            if not change_course:
+                self.error_with_internet()
         else:
             request_db = db.show_currency()
             currency = request_db[1] if request_db else "BYN"
             if currency == "BYN":
                 byn_eur_in = round(course_api["BYN"] / course_api["EUR"], 4)
-                byn_rub_in = round(course_api["BYN"] / course_api["RUB"], 4)
+                byn_rub_in = round(course_api["BYN"] / course_api["RUB"] * 100, 4)
                 data = [
                     ("USD", round(course_api["BYN"], 4), round(course_api["BYN"] + 0.1, 4)),
                     ("EUR", byn_eur_in, byn_eur_in + 0.1),
-                    ("RUB", byn_rub_in - 0.009, byn_rub_in)
+                    ("RUB", byn_rub_in - 0.9, byn_rub_in)
                 ]
             elif currency == "RUB":
                 rub_eur_in = round(course_api["RUB"] / course_api["EUR"], 4)
@@ -428,7 +427,7 @@ class ExchangeNavigationItem(MDBoxLayout):
             else:
                 usd_byn_in = round(course_api["USD"] / course_api["BYN"], 4)
                 usd_eur_in = round(course_api["USD"] / course_api["EUR"], 4)
-                usd_rub_in = round(course_api["USD"] / course_api["RUB"], 4)
+                usd_rub_in = round(course_api["USD"] / course_api["RUB"] * 100, 4)
                 data = [
                     ("BYN", usd_byn_in - 0.03, usd_byn_in),
                     ("EUR", usd_eur_in, usd_eur_in + 0.02),
@@ -454,10 +453,10 @@ class ExchangeNavigationItem(MDBoxLayout):
             self.ids.currency_3_3.text = courses[2][3]
             self.ids.update_time.text = f"Обновлено {courses[0][4]}"
 
-    def set_course_api(self):
+    def set_course_api(self, change_course=False):
         """Обновление курса валют"""
 
-        data = self.get_api()
+        data = self.get_api(change_course)
         if data:
             db.update_data_in_exchange_db(data=data)
             self.set_default_values()
