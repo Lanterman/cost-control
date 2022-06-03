@@ -4,14 +4,12 @@
     orientation: 'vertical'
 
     MDToolbar:
-        title: app.title
-        MDIconButton:
-            icon: "database-remove-outline"
-            pos_hint: {"center_y": 0.5, "center_x": 1}
-            on_release:
-                app.clear_db()
-        Widget:
-            size_hint_x: 0.1
+        id: tool
+        left_action_items:
+            [
+            ["database-remove-outline", lambda x: root.clear_db()],
+            ["dots-vertical", lambda x: root.show_menu_courses()]
+            ]
 
     MDBoxLayout:
         orientation: 'horizontal'
@@ -30,69 +28,58 @@
                 name: "screen main"
                 icon: "calendar-text-outline"
                 on_tab_press:
-                    app.root.ids.main_nav.all_reports()
+                    app.root.ids.main_nav.all_reports(root.currency)
                 MainNavigationItem:
                     id: main_nav
-                    orientation: 'vertical'
-                    MDBoxLayout:
-                        md_bg_color: [0.85, 0.92, 0.98, 1]
-                        padding: 10, 5, 5, 5
-                        MDTextField:
-                            id: search_id
-                            font_size: 18
-                            hint_text: "search"
-                            line_color_focus: [0.20, 0.25, 0.26, 1]
-                        MDIconButton:
-                            icon: "magnify"
-                            pos_hint: {"center_x": 0.5, "center_y": 0.43}
-                            on_release:
-                                root.ids.main_nav.searching_results(root.ids.search_id.text)
-                    ScrollView:
-                        size_hint: 0.99, 8
-                        bar_width: 11
-                        scroll_type: ["bars", "content"]
-                        MDList:
-                            id: show_result
 
             MDBottomNavigationItem:
                 name: "screen cost"
                 icon: "currency-usd"
                 on_tab_press:
-                    root.ids.cost_nav.set_values()
+                    root.ids.cost_nav.set_values(root.currency)
                 CostNavigationItem:
                     id: cost_nav
 
+            MDBottomNavigationItem:
+                name: "screen exchange"
+                icon: "bank"
+                on_tab_press:
+                    root.ids.exchange_nav.set_default_values()
+                ExchangeNavigationItem:
+                    id: exchange_nav
+
 <AddNavigationItem>:
     orientation: "vertical"
-    padding: 10, 10, 15, 5
-    spacing: 20
+    padding: "10sp", "10sp", "15sp", "5sp"
+    spacing: "20sp"
     MDTextField:
         id: add_description
         hint_text: "Введите описание"
         multiline: True
-        font_size: 18
-        max_text_length: 50
-        max_height: 97
+        font_size: "18sp"
+        max_text_length: 100
+        max_height: "100sp"
     MDDropDownItem:
         id: drop_item_category
         text: "---------"
-        font_size: 18
+        font_size: "18sp"
         on_release:
             root.drop_down_category_menu()
     MDDropDownItem:
         id: drop_item_costs
         text: "Расход"
-        font_size: 18
+        font_size: "18sp"
         on_release:
-            root.drop_down_costs_menu()
+            root.drop_down_cost_menu()
     MDTextField:
         id: add_price
         hint_text: "Введите цену"
-        required: True
         text: "0"
-        font_size: 18
+        font_size: "18sp"
         helper_text: "Десятичные числа писать через точку!"
         helper_text_mode: "on_focus"
+        on_focus:
+            root.cleaning_on_focus()
     Widget:
     MDFloatingActionButton:
         icon: "plus"
@@ -105,39 +92,100 @@
     Widget:
         size_hint_y: 0.1
 
+<MainNavigationItem>:
+    orientation: 'vertical'
+    MDBoxLayout:
+        md_bg_color: [0.85, 0.92, 0.98, 1]
+        padding: "10sp", "20sp", "5sp", "0sp"
+        MDTextField:
+            id: search_id
+            font_size: "18sp"
+            hint_text: "Поиск"
+            line_color_focus: [0.20, 0.25, 0.26, 1]
+        MDIconButton:
+            icon: "magnify"
+            pos_hint: {"center_x": 0.5, "center_y": 0.6}
+            on_release:
+                root.searching_results(root.ids.search_id.text, app.root.currency)
+    ScrollView:
+        size_hint: 0.99, 8
+        bar_width: 11
+        scroll_type: ["bars", "content"]
+        MDList:
+            id: show_result
+
 <CostNavigationItem>:
     orientation: "vertical"
-    padding: 30
-    spacing: 40
+    padding: "20sp"
+    spacing: "20sp"
     MDBoxLayout:
         orientation: "vertical"
-        padding: 40, 0
-        MDBoxLayout:
-            MDLabel:
-                font_size: 22
-                text: "Осталось:"
-            MDLabel:
-                id: set_profit
-                font_size: 22
-                halign: "right"
-        MDBoxLayout:
-            CostDataLabel:
-                text: "Заработано:"
-            CostDataLabel:
-                id: set_income
-                halign: "right"
-        MDBoxLayout:
-            CostDataLabel:
-                text: "Потрачено:"
-            CostDataLabel:
-                id: set_expenditure
-                halign: "right"
+        CostDataLabel:
+            id: set_profit
+        CostDataLabel:
+            id: set_income
+        CostDataLabel:
+            id: set_expenditure
     MDRaisedButton:
         text: "Подробнее"
         pos_hint: {"center_x": 0.5}
-        on_release: root.full_info_of_reports()
+        font_size: "16sp"
+        on_release:
+            root.full_info_of_reports(app.root.currency)
     CostDataLabel:
         id: set_description
+    Widget:
+
+<ExchangeNavigationItem>:
+    orientation: "vertical"
+    MDBoxLayout:
+        orientation: "vertical"
+        size_hint_y: None
+        height: "160dp"
+        padding: "5sp", "15sp", "10sp", "10sp"
+        md_bg_color: [0.85, 0.92, 0.98, 1]
+        MDBoxLayout:
+            CostDataLabel:
+                text: "Валюта"
+            CostDataLabel:
+                text: "Покупка"
+            CostDataLabel:
+                text: "Продажа"
+        MDBoxLayout:
+            CostDataLabel:
+                id: currency_1_1
+            CostDataLabel:
+                id: currency_1_2
+            CostDataLabel:
+                id: currency_1_3
+        MDBoxLayout:
+            CostDataLabel:
+                id: currency_2_1
+            CostDataLabel:
+                id: currency_2_2
+            CostDataLabel:
+                id: currency_2_3
+        MDBoxLayout:
+            CostDataLabel:
+                id: currency_3_1
+            CostDataLabel:
+                id: currency_3_2
+            CostDataLabel:
+                id: currency_3_3
+    MDBoxLayout:
+        size_hint_y: None
+        height: "60dp"
+        padding: 0, "20sp"
+        MDLabel:
+            id: update_time
+            font_size: "16sp"
+            halign: "center"
+    MDRaisedButton:
+        text: "Обновить"
+        pos_hint: {"center_x": 0.5}
+        font_size: "16sp"
+        on_release:
+            root.set_course_api()
     Widget:
 
 <BoxItemEditReport>:
@@ -147,14 +195,13 @@
     height: "200dp"
     MDBoxLayout:
         MDLabel:
-            text: "Description"
+            text: "Описание"
         MDTextField:
             id: changed_description
             pos_hint: {"center_y": 0.5}
-            required: True
     MDBoxLayout:
         MDLabel:
-            text: "Category"
+            text: "Категория"
         MDDropDownItem:
             id: drop_item_category
             pos_hint: {"center_y": 0.55}
@@ -162,76 +209,20 @@
                 root.drop_down_category_menu()
     MDBoxLayout:
         MDLabel:
-            text: "Cost"
+            text: "Тип"
         MDDropDownItem:
             id: drop_item_costs
             pos_hint: {"center_y": 0.55}
             on_release:
-                root.drop_down_costs_menu()
+                root.drop_down_cost_menu()
     MDBoxLayout:
         MDLabel:
-            text: "Price"
+            text: "Цена"
         MDTextField:
             id: changed_price
             pos_hint: {"center_y": 0.5}
             required: True
     Widget:
-
-<BoxItemFullInfoOfReports>:
-    orientation: "vertical"
-    size_hint_y: None
-    height: "330dp"
-    padding: 20, 0, 20, 10
-    MDBoxLayout:
-        orientation: "vertical"
-        MDBoxLayout:
-            spacing: 20
-            FullInfoOfReportsLabel:
-                text: "Продукты:"
-            FullInfoOfReportsLabel:
-                id: per_product
-        MDBoxLayout:
-            spacing: 20
-            FullInfoOfReportsLabel:
-                text: "Транспорт:"
-            FullInfoOfReportsLabel:
-                id: per_transport
-        MDBoxLayout:
-            spacing: 20
-            FullInfoOfReportsLabel:
-                text: "Медицина:"
-            FullInfoOfReportsLabel:
-                id: per_medicine
-        MDBoxLayout:
-            spacing: 20
-            FullInfoOfReportsLabel:
-                text: "Связь:"
-            FullInfoOfReportsLabel:
-                id: per_phone
-        MDBoxLayout:
-            spacing: 20
-            FullInfoOfReportsLabel:
-                text: "Хобби:"
-            FullInfoOfReportsLabel:
-                id: per_hobby
-        MDBoxLayout:
-            spacing: 20
-            FullInfoOfReportsLabel:
-                text: "Дом:"
-            FullInfoOfReportsLabel:
-                id: per_home
-        MDBoxLayout:
-            spacing: 20
-            FullInfoOfReportsLabel:
-                text: "Копилка:"
-            FullInfoOfReportsLabel:
-                id: per_moneybox
-        MDBoxLayout:
-            spacing: 20
-            FullInfoOfReportsLabel:
-                text: "Другое:"
-            FullInfoOfReportsLabel:
-                id: per_other
 
 <RecordWidget>:
     text_color: [0.67, 0.23, 0.23, 1]
@@ -245,21 +236,13 @@
         on_release:
             root.show_menu()
 
-<DropdownMenuFunctionsOfReport>:
-    width_mult: 1.6
-    max_height: 147
-    radius: [24, 24, 24, 24]
-    background_color: [.66, 0.88, 0.92, 1]
-
 <DropDownMenuReportsBox>:
-    width_mult: 1.9
-    max_height: 230
     radius: [24, 24, 24, 24]
     background_color: [.66, 0.88, 0.92, 1]
 
 <IfNoRecords>:
     halign: "center"
-    text: "No records"
+    text: "Нет записей"
     theme_text_color: "Custom"
     text_color: 0.89, 0.39, 0.26, 1
 
