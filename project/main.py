@@ -18,10 +18,11 @@ class MainWindow(MDBoxLayout):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.is_exist_report = db.show_currency()
-        self.currency = self.is_exist_report.name if self.is_exist_report else "BYN"
-        if not self.is_exist_report:
+        self.is_exist_currency = db.show_currency()
+        self.currency = self.is_exist_currency.name if self.is_exist_currency else "BYN"
+        if not self.is_exist_currency:
             db.create_report_in_current_currency()
+            self.is_exist_currency = db.show_currency()
         self.set_title_toolbar(self.currency)
 
     def show_menu_courses(self):
@@ -40,9 +41,8 @@ class MainWindow(MDBoxLayout):
         """Установить курс"""
 
         self.currency = x
-        self.is_exist_report = db.show_currency()  ##
         self.menu_courses.dismiss()
-        db.update_report_of_current_currency(currency=self.currency, instance=self.is_exist_report)
+        db.update_report_of_current_currency(currency=self.currency, instance=self.is_exist_currency)
         self.set_title_toolbar(self.currency)
         self.ids.main_nav.all_reports(self.currency)
         self.ids.cost_nav.set_values(self.currency)
@@ -71,10 +71,6 @@ class MainWindow(MDBoxLayout):
 
 class DropDownMenuReportsBox(MDDropdownMenu):
     """Виджет меню выбора значения для поля"""
-
-
-class IfNoRecords(MDLabel):
-    """Установить метку, если нет записей"""
 
 
 class CostDataLabel(MDLabel):
@@ -286,7 +282,8 @@ class MainNavigationItem(MDBoxLayout):
                                  instance=report, tertiary_text=f'{report.date}')
                 )
         else:
-            result_list_widget.add_widget(IfNoRecords())
+            result_list_widget.add_widget(MDLabel(halign="center", text="Нет записей", theme_text_color="Custom",
+                                                  text_color=(0.89, 0.39, 0.26, 1)))
 
 
 class AddNavigationItem(AbstractClassForDropDownMenu):
@@ -387,10 +384,12 @@ class ExchangeNavigationItem(MDBoxLayout):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        if not db.records_output_from_exchange_db():
+        self.instances = db.records_output_from_exchange_db()
+        if not self.instances:
             data = self.get_api()
             if data:
                 db.insert_data_in_exchange_db(data)
+                self.instances = db.records_output_from_exchange_db()
 
     @staticmethod
     def error_with_internet():
@@ -441,27 +440,26 @@ class ExchangeNavigationItem(MDBoxLayout):
     def set_default_values(self):
         """Установка значений по умолчанию"""
 
-        courses = db.records_output_from_exchange_db()
-        if courses:
-            self.ids.currency_1_1.text = courses[0].name
-            self.ids.currency_1_2.text = courses[0].buy
-            self.ids.currency_1_3.text = courses[0].sell
+        if self.instances:
+            self.ids.currency_1_1.text = self.instances[0].name
+            self.ids.currency_1_2.text = self.instances[0].buy
+            self.ids.currency_1_3.text = self.instances[0].sell
 
-            self.ids.currency_2_1.text = courses[1].name
-            self.ids.currency_2_2.text = courses[1].buy
-            self.ids.currency_2_3.text = courses[1].sell
+            self.ids.currency_2_1.text = self.instances[1].name
+            self.ids.currency_2_2.text = self.instances[1].buy
+            self.ids.currency_2_3.text = self.instances[1].sell
 
-            self.ids.currency_3_1.text = courses[2].name
-            self.ids.currency_3_2.text = courses[2].buy
-            self.ids.currency_3_3.text = courses[2].sell
-            self.ids.update_time.text = f"Обновлено {courses[0].date}"
+            self.ids.currency_3_1.text = self.instances[2].name
+            self.ids.currency_3_2.text = self.instances[2].buy
+            self.ids.currency_3_3.text = self.instances[2].sell
+            self.ids.update_time.text = f"Обновлено {self.instances[0].date}"
 
     def set_course_api(self, change_course=False):
         """Обновление курса валют"""
 
         data = self.get_api(change_course)
         if data:
-            db.update_data_in_exchange_db(reports=data)
+            db.update_data_in_exchange_db(reports=data, instances=self.instances)
             self.set_default_values()
 
 

@@ -108,10 +108,9 @@ class DataBase:
         self.connection.add_all(list_reports)
         self.connection.commit()
 
-    def update_data_in_exchange_db(self, reports):
+    def update_data_in_exchange_db(self, reports, instances):
         """Обновление записей в exchange table"""
 
-        instances = self.records_output_from_exchange_db()  # подумать об оптимизации запросов
         for id_currency, item in enumerate(reports, 0):
             instances[id_currency].name = item[0]
             instances[id_currency].buy = item[1]
