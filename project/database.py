@@ -125,6 +125,7 @@ class DataBase:
     def insert_data(self, description, category, cost, price, currency):
         """Добавление записей в базу"""
 
+        category, price = ValidateData.control_of_filling_the_price_and_category(category, cost, price)
         self.cursor.execute(
             """
             INSERT INTO CostControl (description, category, costs, price, currency, date) VALUES (?, ?, ?, ?, ?, ?)

@@ -348,7 +348,7 @@ class CostNavigationItem(MDBoxLayout):
         elif 0 < profit < 300:
             text = 'Пока что все под контролем.\nТак держать!'
         else:
-            text = f'Все под контролем.\nПримерно допустимая сумма затрат {profit - 300} BYN!'
+            text = f'Все под контролем.\nПримерно допустимая сумма затрат {round(profit - 300, 2)} BYN!'
         return text
 
     @staticmethod
@@ -390,11 +390,14 @@ class ExchangeNavigationItem(MDBoxLayout):
                 db.insert_data_in_exchange_db(data)
 
     @staticmethod
-    def error_with_internet():
+    def error_with_internet(first_launch=False):
         """Ошибка при отсутствии интернета"""
 
         snacbar = ValidateData().snackbar
-        snacbar.text = "Требуется подключение к интернету!"
+        if first_launch:
+            snacbar.text = "Требуется перезагрузка приложения!"
+        else:
+            snacbar.text = "Требуется подключение к интернету!"
         snacbar.open()
 
     def get_api(self, change_course=False):
@@ -452,6 +455,8 @@ class ExchangeNavigationItem(MDBoxLayout):
             self.ids.currency_3_2.text = courses[2][2]
             self.ids.currency_3_3.text = courses[2][3]
             self.ids.update_time.text = f"Обновлено {courses[0][4]}"
+        else:
+            self.error_with_internet(first_launch=True)
 
     def set_course_api(self, change_course=False):
         """Обновление курса валют"""
